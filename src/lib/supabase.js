@@ -13,8 +13,8 @@ import { createClient } from '@supabase/supabase-js';
 
 // ⚠️ IMPORTANTE: reemplazá estos valores con los de tu proyecto Supabase
 // Los encontrás en: supabase.com → Tu Proyecto → Settings → API
-const SUPABASE_URL  = 'https://fdvoiaoobjtsvkzpobyq.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkdm9pYW9vYmp0c3ZrenBvYnlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MDE0ODksImV4cCI6MjA4OTk3NzQ4OX0.-Yfop-eoDVVZj2ddwEe6nZgBKSP6MLn1PB5F24sKtVk';
+const SUPABASE_URL  = 'import.meta.env.VITE_SUPABASE_URL';
+const SUPABASE_ANON = 'import.meta.env.VITE_SUPABASE_ANON_KEY';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
 
