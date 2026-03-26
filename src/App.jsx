@@ -1,0 +1,747 @@
+// ============================================================
+//  App.jsx — Componente principal de MuniScore
+//
+//  Este archivo conecta el diseño visual con Supabase.
+//  Los datos ya no son ficticios: vienen de la base de datos.
+//
+//  Para cambiar colores → editá el objeto T al principio
+//  Para cambiar pesos de encuesta → editá PREGUNTAS más abajo
+// ============================================================
+
+import { useState, useEffect, useCallback } from 'react';
+import {
+  getMunicipios,
+  getEncuestasMunicipio,
+  getDocumentos,
+  getArticulos,
+  enviarVoto,
+  loginConEmail,
+  getUsuarioActual,
+  cerrarSesion,
+  yaVoto,
+} from './lib/supabase';
+
+// ─────────────────────────────────────────────
+//  TOKENS DE DISEÑO — estilo Airbnb
+// ─────────────────────────────────────────────
+const T = {
+  bg:          "#FFFFFF",
+  bgWarm:      "#F7F5F2",
+  bgCard:      "#FFFFFF",
+  bgMuted:     "#F3F0EC",
+  border:      "#E8E4DF",
+  borderMid:   "#D4CFC9",
+  text:        "#1A1A1A",
+  textMid:     "#6B6560",
+  textLight:   "#A09890",
+  orange:      "#E8612A",
+  orangeSoft:  "#FDF1EC",
+  orangeMid:   "#F5CDB8",
+  green:       "#00A699",
+  greenSoft:   "#E6F6F5",
+  greenMid:    "#A0DDD9",
+  blue:        "#0066CC",
+  blueSoft:    "#EAF2FB",
+  blueMid:     "#A8C8ED",
+  yellow:      "#C27D00",
+  yellowSoft:  "#FEF6E4",
+  yellowMid:   "#F8D99A",
+  red:         "#C0392B",
+  redSoft:     "#FDEDEB",
+  redMid:      "#F0ADA7",
+  radius:      "16px",
+  radiusSm:    "10px",
+  radiusXl:    "24px",
+  shadow:      "0 2px 16px rgba(0,0,0,0.07)",
+  shadowHover: "0 8px 40px rgba(0,0,0,0.13)",
+  shadowCard:  "0 1px 6px rgba(0,0,0,0.06)",
+};
+
+// ─────────────────────────────────────────────
+//  PREGUNTAS DE LA ENCUESTA Y SUS PESOS
+//  Para cambiar el peso de cada categoría:
+//  1. Modificá el campo "peso" de cada pregunta
+//  2. Asegurate de que todos los pesos sumen 1.00
+// ─────────────────────────────────────────────
+const PREGUNTAS = [
+  { key: "transparencia",  emoji: "🔍", label: "Transparencia y ausencia de corrupción",        peso: 0.25, campo_db: "puntaje_transparencia"  },
+  { key: "velocidad",      emoji: "⚡", label: "Velocidad de aprobación de planos y permisos",  peso: 0.20, campo_db: "puntaje_velocidad"      },
+  { key: "normativa",      emoji: "📋", label: "Claridad y accesibilidad de las normativas",    peso: 0.20, campo_db: "puntaje_normativa"      },
+  { key: "previsibilidad", emoji: "🎯", label: "Previsibilidad y consistencia de los procesos", peso: 0.15, campo_db: "puntaje_previsibilidad"  },
+  { key: "atencion",       emoji: "🤝", label: "Atención al público en dependencias municipales",peso: 0.10, campo_db: "puntaje_atencion"       },
+  { key: "impuestos",      emoji: "💰", label: "Razonabilidad de tasas e impuestos municipales",peso: 0.10, campo_db: "puntaje_impuestos"      },
+];
+
+// ─────────────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────────────
+const getScore = (s) => {
+  if (s >= 4.0) return { c: T.green,  soft: T.greenSoft,  mid: T.greenMid,  label: "Favorable" };
+  if (s >= 3.0) return { c: T.yellow, soft: T.yellowSoft, mid: T.yellowMid, label: "Moderado"  };
+  if (s >= 2.0) return { c: T.red,    soft: T.redSoft,    mid: T.redMid,    label: "Difícil"   };
+  return               { c: T.red,    soft: T.redSoft,    mid: T.redMid,    label: "Crítico"   };
+};
+
+const formatFecha = (isoStr) => {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  return d.toLocaleDateString('es-AR', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+// ─────────────────────────────────────────────
+//  COMPONENTES BASE
+// ─────────────────────────────────────────────
+const Pill = ({ label, color }) => (
+  <span style={{ display: "inline-block", padding: "3px 11px", borderRadius: 99, background: color + "18", color, fontSize: 11, fontWeight: 700 }}>
+    {label}
+  </span>
+);
+
+const Badge = ({ s, size = 56 }) => {
+  const { c, soft, mid } = getScore(s || 0);
+  return (
+    <div style={{ width: size, height: size, borderRadius: size * 0.28, background: soft, border: `1.5px solid ${mid}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <span style={{ fontSize: size * 0.38, fontWeight: 800, color: c, lineHeight: 1 }}>{(s || 0).toFixed(1)}</span>
+      {size > 50 && <span style={{ fontSize: 9, color: c, opacity: 0.7, letterSpacing: 1 }}>/ 5</span>}
+    </div>
+  );
+};
+
+const CatBar = ({ label, val, peso }) => {
+  const { c } = getScore(val || 0);
+  return (
+    <div style={{ marginBottom: 13 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+        <span style={{ fontSize: 13, color: T.textMid }}>{label} <span style={{ fontSize: 11, color: T.textLight }}>({Math.round(peso * 100)}%)</span></span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: c }}>{(val || 0).toFixed(1)}</span>
+      </div>
+      <div style={{ height: 6, background: T.bgMuted, borderRadius: 99, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${((val || 0) / 5) * 100}%`, background: c, borderRadius: 99, transition: "width 0.7s cubic-bezier(.4,0,.2,1)" }} />
+      </div>
+    </div>
+  );
+};
+
+const BtnPrimary = ({ children, onClick, full, disabled, style: extra }) => (
+  <button onClick={onClick} disabled={disabled} style={{
+    width: full ? "100%" : "auto", padding: "13px 22px", borderRadius: T.radius,
+    background: disabled ? T.bgMuted : T.orange, border: "none",
+    color: disabled ? T.textLight : "#fff", fontWeight: 700, fontSize: 14,
+    cursor: disabled ? "not-allowed" : "pointer", fontFamily: "inherit",
+    boxShadow: disabled ? "none" : `0 4px 18px ${T.orange}44`,
+    transition: "all 0.15s", ...extra,
+  }}
+    onMouseEnter={e => !disabled && (e.currentTarget.style.transform = "translateY(-1px)")}
+    onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+  >{children}</button>
+);
+
+const BtnGhost = ({ children, onClick }) => (
+  <button onClick={onClick} style={{ padding: "12px 20px", borderRadius: T.radius, background: "transparent", border: `1.5px solid ${T.border}`, color: T.textMid, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>{children}</button>
+);
+
+// ─────────────────────────────────────────────
+//  SKELETON LOADER (mientras carga Supabase)
+// ─────────────────────────────────────────────
+const Skeleton = ({ w = "100%", h = 16, radius = 8 }) => (
+  <div style={{ width: w, height: h, borderRadius: radius, background: `linear-gradient(90deg, ${T.bgMuted} 25%, ${T.border} 50%, ${T.bgMuted} 75%)`, backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }} />
+);
+
+// ─────────────────────────────────────────────
+//  MODAL DE ENCUESTA
+// ─────────────────────────────────────────────
+const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
+  const [paso, setPaso] = useState(usuario ? 1 : 0);
+  const [email, setEmail] = useState("");
+  const [pts, setPts] = useState({ transparencia: 0, velocidad: 0, normativa: 0, impuestos: 0, atencion: 0, previsibilidad: 0 });
+  const [meses, setMeses] = useState("");
+  const [tipo, setTipo] = useState("");
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState(null);
+  const [linkEnviado, setLinkEnviado] = useState(false);
+
+  const prog  = Object.values(pts).filter(v => v > 0).length;
+  const listo = prog === 6;
+  const emailOk = email.includes("@") && email.includes(".");
+
+  const handleLogin = async () => {
+    setCargando(true); setError(null);
+    const { error } = await loginConEmail(email);
+    setCargando(false);
+    if (error) { setError("No pudimos enviar el email. Verificá que sea válido."); return; }
+    setLinkEnviado(true);
+  };
+
+  const handleEnviar = async () => {
+    if (!listo) return;
+    setCargando(true); setError(null);
+    const votoExistente = await yaVoto(mun.id);
+    if (votoExistente) { setError("Ya calificaste este municipio anteriormente."); setCargando(false); return; }
+
+    const { error } = await enviarVoto({
+      municipioId:            mun.id,
+      puntajeTransparencia:   pts.transparencia,
+      puntajeVelocidad:       pts.velocidad,
+      puntajeNormativa:       pts.normativa,
+      puntajeImpuestos:       pts.impuestos,
+      puntajeAtencion:        pts.atencion,
+      puntajePrevisibilidad:  pts.previsibilidad,
+      mesesAprobacion:        meses ? parseInt(meses) : null,
+      tipoProyecto:           tipo || null,
+    });
+
+    setCargando(false);
+    if (error) { setError("No se pudo registrar el voto. Intentá de nuevo."); return; }
+    setPaso(2);
+    if (onVotado) onVotado();
+  };
+
+  const Stars = ({ campo, val }) => (
+    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+      {[1, 2, 3, 4, 5].map(n => (
+        <button key={n} onClick={() => setPts(p => ({ ...p, [campo]: n }))} style={{
+          width: 42, height: 42, borderRadius: T.radiusSm, cursor: "pointer",
+          border: `1.5px solid ${n <= val ? T.orange : T.border}`,
+          background: n <= val ? T.orangeSoft : T.bgWarm,
+          color: n <= val ? T.orange : T.textLight,
+          fontSize: 18, fontWeight: 700, transition: "all 0.12s",
+          transform: n <= val ? "scale(1.1)" : "scale(1)", fontFamily: "inherit"
+        }}>★</button>
+      ))}
+      {val > 0 && <span style={{ fontSize: 12, color: T.textMid, alignSelf: "center", marginLeft: 4, fontStyle: "italic" }}>
+        {["", "Muy difícil", "Difícil", "Regular", "Bueno", "Excelente"][val]}
+      </span>}
+    </div>
+  );
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(26,26,26,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300, backdropFilter: "blur(6px)" }}>
+      <div style={{ background: T.bg, borderRadius: T.radiusXl, width: 500, maxWidth: "92vw", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 80px rgba(0,0,0,0.18)", animation: "fadeUp 0.22s ease" }}>
+
+        {/* Header */}
+        <div style={{ padding: "28px 30px 22px", borderBottom: `1px solid ${T.border}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <p style={{ margin: "0 0 4px", fontSize: 11, color: T.textLight, letterSpacing: 2, textTransform: "uppercase" }}>
+                {paso === 0 ? "Verificación" : paso === 1 ? `Paso 2 · Calificación` : "Listo"}
+              </p>
+              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: T.text }}>
+                {paso === 2 ? "¡Gracias por tu aporte!" : `Calificar ${mun.nombre}`}
+              </h2>
+            </div>
+            <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${T.border}`, background: T.bg, cursor: "pointer", fontSize: 16, color: T.textLight }}>✕</button>
+          </div>
+          {paso === 1 && (
+            <div style={{ display: "flex", gap: 5, marginTop: 18 }}>
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} style={{ flex: 1, height: 4, borderRadius: 99, background: prog >= i ? T.orange : T.bgMuted, transition: "background 0.2s" }} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div style={{ padding: "24px 30px 28px" }}>
+          {error && <div style={{ padding: "12px 14px", borderRadius: T.radiusSm, background: T.redSoft, border: `1px solid ${T.redMid}`, color: T.red, fontSize: 13, marginBottom: 16 }}>{error}</div>}
+
+          {/* PASO 0: Login con email */}
+          {paso === 0 && !linkEnviado && <>
+            <p style={{ fontSize: 14, color: T.textMid, margin: "0 0 20px", lineHeight: 1.6 }}>Ingresá tu email para validar tu identidad. Te enviamos un link de acceso, sin contraseña.</p>
+            <input type="email" placeholder="hola@ejemplo.com" value={email} onChange={e => setEmail(e.target.value)}
+              style={{ width: "100%", padding: "14px 16px", borderRadius: T.radius, border: `1.5px solid ${emailOk ? T.orange : T.border}`, background: emailOk ? T.orangeSoft : T.bgWarm, color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }}
+            />
+            <p style={{ fontSize: 12, color: T.textLight, margin: "8px 0 22px" }}>📧 Una dirección = un voto por municipio.</p>
+            <div style={{ display: "flex", gap: 12 }}>
+              <BtnGhost onClick={onClose}>Cancelar</BtnGhost>
+              <BtnPrimary onClick={handleLogin} disabled={!emailOk || cargando} style={{ flex: 1 }}>
+                {cargando ? "Enviando..." : "Enviar link de acceso →"}
+              </BtnPrimary>
+            </div>
+          </>}
+
+          {paso === 0 && linkEnviado && (
+            <div style={{ textAlign: "center", padding: "16px 0" }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>📧</div>
+              <p style={{ fontSize: 15, color: T.text, fontWeight: 700, marginBottom: 8 }}>Revisá tu email</p>
+              <p style={{ fontSize: 14, color: T.textMid, lineHeight: 1.6 }}>Enviamos un link a <strong>{email}</strong>. Hacé clic en él y volvé a esta página para calificar.</p>
+            </div>
+          )}
+
+          {/* PASO 1: Encuesta */}
+          {paso === 1 && <>
+            {PREGUNTAS.map(p => (
+              <div key={p.key} style={{ marginBottom: 22 }}>
+                <p style={{ margin: 0, fontSize: 14, color: T.text, fontWeight: 600 }}>{p.emoji} {p.label}</p>
+                <Stars campo={p.key} val={pts[p.key]} />
+              </div>
+            ))}
+            <div style={{ padding: 18, borderRadius: T.radius, background: T.bgWarm, border: `1px solid ${T.border}`, marginTop: 8, marginBottom: 24 }}>
+              <p style={{ margin: "0 0 14px", fontSize: 13, fontWeight: 600, color: T.text }}>Datos opcionales</p>
+              <div style={{ display: "flex", gap: 12 }}>
+                <select value={tipo} onChange={e => setTipo(e.target.value)} style={{ flex: 1, padding: "10px 14px", borderRadius: T.radiusSm, border: `1px solid ${T.border}`, background: T.bg, color: tipo ? T.text : T.textLight, fontSize: 13, fontFamily: "inherit" }}>
+                  <option value="">Tipo de proyecto</option>
+                  {["Casa unifamiliar", "Edificio", "Industrial", "Comercial", "Otro"].map(o => <option key={o}>{o}</option>)}
+                </select>
+                <input type="number" placeholder="Meses" value={meses} onChange={e => setMeses(e.target.value)}
+                  style={{ width: 110, padding: "10px 14px", borderRadius: T.radiusSm, border: `1px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 13, fontFamily: "inherit" }}
+                />
+              </div>
+            </div>
+            <BtnPrimary full onClick={handleEnviar} disabled={!listo || cargando}>
+              {cargando ? "Enviando..." : listo ? "Enviar mi calificación →" : `Completá todas las categorías (${prog}/6)`}
+            </BtnPrimary>
+          </>}
+
+          {/* PASO 2: Confirmación */}
+          {paso === 2 && (
+            <div style={{ textAlign: "center", padding: "10px 0 8px" }}>
+              <div style={{ width: 72, height: 72, borderRadius: "50%", background: T.greenSoft, border: `2px solid ${T.greenMid}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 20px" }}>✓</div>
+              <p style={{ fontSize: 15, color: T.textMid, lineHeight: 1.7, margin: "0 0 28px" }}>
+                Tu calificación de <strong style={{ color: T.text }}>{mun.nombre}</strong> fue registrada. El índice se actualizará en los próximos minutos.
+              </p>
+              <BtnPrimary onClick={onClose}>Volver al mapa</BtnPrimary>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+//  PANEL LATERAL DEL MUNICIPIO
+// ─────────────────────────────────────────────
+const PanelMunicipio = ({ mun, usuario, onClose }) => {
+  const [tab, setTab]               = useState("datos");
+  const [showSurvey, setShowSurvey] = useState(false);
+  const [comentarios, setComentarios] = useState([]);
+  const [documentos, setDocumentos]   = useState([]);
+  const [cargando, setCargando]       = useState(false);
+
+  const { c, soft, label } = getScore(mun.puntaje_global || 0);
+
+  // Cargar comentarios o documentos según la pestaña activa
+  useEffect(() => {
+    if (tab === "comentarios" && comentarios.length === 0) {
+      setCargando(true);
+      getEncuestasMunicipio(mun.id).then(({ data }) => {
+        setComentarios(data || []);
+        setCargando(false);
+      });
+    }
+    if (tab === "normativa" && documentos.length === 0) {
+      setCargando(true);
+      getDocumentos(mun.id).then(({ data }) => {
+        setDocumentos(data || []);
+        setCargando(false);
+      });
+    }
+  }, [tab]);
+
+  return (
+    <div style={{ position: "absolute", top: 0, right: 0, width: 380, height: "100%", background: T.bg, borderLeft: `1px solid ${T.border}`, display: "flex", flexDirection: "column", zIndex: 20, boxShadow: "-12px 0 48px rgba(0,0,0,0.09)", animation: "slideIn 0.22s ease" }}>
+
+      {/* Header */}
+      <div style={{ padding: "26px 26px 20px", background: `linear-gradient(160deg, ${soft} 0%, #fff 100%)`, borderBottom: `1px solid ${T.border}` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <p style={{ margin: "0 0 4px", fontSize: 11, color: T.textLight, letterSpacing: 2, textTransform: "uppercase" }}>{mun.region}</p>
+            <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>{mun.nombre}</h2>
+          </div>
+          <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: "50%", border: `1.5px solid ${T.border}`, background: T.bg, color: T.textLight, cursor: "pointer", fontSize: 14 }}>✕</button>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 18 }}>
+          <Badge s={mun.puntaje_global} size={66} />
+          <div>
+            <Pill label={label} color={c} />
+            <p style={{ margin: "8px 0 0", fontSize: 13, color: T.textMid }}>
+              <strong style={{ color: T.text }}>{mun.total_votos || 0}</strong> evaluaciones
+              {mun.meses_promedio && <> · <strong style={{ color: T.text }}>{mun.meses_promedio} meses</strong> prom.</>}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: "flex", padding: "0 10px", borderBottom: `1px solid ${T.border}` }}>
+        {[["datos", "Datos"], ["comentarios", "Opiniones"], ["normativa", "Normativa"]].map(([t, l]) => (
+          <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: "14px 4px", background: "none", border: "none", borderBottom: tab === t ? `2px solid ${T.orange}` : "2px solid transparent", color: tab === t ? T.orange : T.textLight, fontWeight: tab === t ? 700 : 500, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{l}</button>
+        ))}
+      </div>
+
+      {/* Contenido */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "22px 26px" }}>
+
+        {tab === "datos" && <>
+          {PREGUNTAS.map(p => (
+            <CatBar key={p.key} label={p.label.split(" ").slice(0, 3).join(" ")} val={mun[p.campo_db]} peso={p.peso} />
+          ))}
+          {(mun.puntaje_global || 0) < 2.5 && (
+            <div style={{ marginTop: 18, padding: "14px 16px", borderRadius: T.radius, background: T.redSoft, border: `1px solid ${T.redMid}` }}>
+              <p style={{ margin: "0 0 4px", fontSize: 13, color: T.red, fontWeight: 700 }}>⚠ Atención</p>
+              <p style={{ margin: 0, fontSize: 13, color: "#7B2021", lineHeight: 1.5 }}>Este municipio presenta dificultades administrativas significativas.</p>
+            </div>
+          )}
+          {(mun.puntaje_global || 0) >= 4.0 && (
+            <div style={{ marginTop: 18, padding: "14px 16px", borderRadius: T.radius, background: T.greenSoft, border: `1px solid ${T.greenMid}` }}>
+              <p style={{ margin: "0 0 4px", fontSize: 13, color: T.green, fontWeight: 700 }}>✓ Condiciones favorables</p>
+              <p style={{ margin: 0, fontSize: 13, color: "#005A55", lineHeight: 1.5 }}>Alta transparencia y agilidad. Recomendado para nuevos desarrollos.</p>
+            </div>
+          )}
+        </>}
+
+        {tab === "comentarios" && (
+          cargando
+            ? <Skeleton h={80} radius={12} />
+            : comentarios.length === 0
+              ? <p style={{ fontSize: 14, color: T.textLight, textAlign: "center", marginTop: 32 }}>Aún no hay opiniones para este municipio.<br />¡Sé el primero en calificarlo!</p>
+              : comentarios.filter(c => c.comentario).map((c, i) => (
+                <div key={i} style={{ padding: 16, borderRadius: T.radius, background: T.bgWarm, border: `1px solid ${T.border}`, marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                    <span style={{ fontSize: 12, color: T.textLight }}>{formatFecha(c.created_at)}</span>
+                    {c.tipo_proyecto && <Pill label={c.tipo_proyecto} color={T.blue} />}
+                  </div>
+                  <p style={{ margin: 0, fontSize: 13, color: T.textMid, lineHeight: 1.6 }}>{c.comentario}</p>
+                </div>
+              ))
+        )}
+
+        {tab === "normativa" && (
+          cargando
+            ? <Skeleton h={56} radius={12} />
+            : documentos.length === 0
+              ? <p style={{ fontSize: 14, color: T.textLight, textAlign: "center", marginTop: 32 }}>Aún no hay documentos cargados para este municipio.</p>
+              : documentos.map((d, i) => (
+                <a key={i} href={d.archivo_url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: T.bgWarm, borderRadius: T.radius, marginBottom: 10, border: `1px solid ${T.border}`, cursor: "pointer" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: T.radiusSm, background: T.orangeSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: T.orange }}>{d.formato}</div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: T.text }}>{d.nombre}</p>
+                      <p style={{ margin: "2px 0 0", fontSize: 11, color: T.textLight }}>{d.tipo} · {d.anio}</p>
+                    </div>
+                    <span style={{ color: T.orange, fontWeight: 700, fontSize: 18 }}>↓</span>
+                  </div>
+                </a>
+              ))
+        )}
+      </div>
+
+      {/* CTA */}
+      <div style={{ padding: "16px 26px 22px", borderTop: `1px solid ${T.border}` }}>
+        <BtnPrimary full onClick={() => setShowSurvey(true)}>
+          Calificar {mun.nombre} →
+        </BtnPrimary>
+      </div>
+
+      {showSurvey && <ModalEncuesta mun={mun} usuario={usuario} onClose={() => setShowSurvey(false)} onVotado={() => setShowSurvey(false)} />}
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+//  NODO DEL MAPA
+// ─────────────────────────────────────────────
+// NOTA: En la versión de producción estos nodos se reemplazan
+// por polígonos GeoJSON reales usando Leaflet.js.
+// Este componente sirve como placeholder visual.
+const POSICIONES = {
+  "caba":              { x: 62, y: 25 }, "vicente-lopez":   { x: 62, y: 18 },
+  "san-isidro":        { x: 63, y: 11 }, "san-fernando":    { x: 63, y: 5  },
+  "tigre":             { x: 56, y: 3  }, "pilar":           { x: 42, y: 3  },
+  "san-martin":        { x: 49, y: 17 }, "tres-febrero":    { x: 42, y: 15 },
+  "moron":             { x: 36, y: 22 }, "la-matanza":      { x: 29, y: 28 },
+  "merlo":             { x: 24, y: 24 }, "moreno":          { x: 17, y: 18 },
+  "avellaneda":        { x: 62, y: 32 }, "lanus":           { x: 56, y: 35 },
+  "lomas-zamora":      { x: 49, y: 36 }, "quilmes":         { x: 67, y: 36 },
+  "berazategui":       { x: 72, y: 39 }, "florencio-varela":{ x: 68, y: 44 },
+};
+
+const Nodo = ({ mun, activo, onClick }) => {
+  const [hov, setHov] = useState(false);
+  const pos = POSICIONES[mun.geojson_id] || { x: 50, y: 50 };
+  const { c, soft, mid } = getScore(mun.puntaje_global || 0);
+  const sel = activo?.id === mun.id;
+
+  return (
+    <div onClick={() => onClick(mun)} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y + 5}%`, transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: sel ? 10 : hov ? 5 : 1 }}>
+      {sel && <div style={{ position: "absolute", inset: -6, borderRadius: "50%", border: `2px solid ${c}`, animation: "ripple 1.8s ease-out infinite", opacity: 0.5 }} />}
+      <div style={{
+        width: 44, height: 44, borderRadius: "50%",
+        background: sel ? c : soft, border: `2px solid ${sel ? c : mid}`,
+        boxShadow: sel ? `0 6px 24px ${c}55` : hov ? `0 4px 16px ${c}44` : T.shadowCard,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontWeight: 800, fontSize: 12, color: sel ? "#fff" : c,
+        transition: "all 0.2s", transform: sel ? "scale(1.2)" : hov ? "scale(1.1)" : "scale(1)"
+      }}>
+        {(mun.puntaje_global || 0).toFixed(1)}
+      </div>
+      <div style={{
+        position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", marginTop: 5,
+        whiteSpace: "nowrap", fontSize: 9.5, fontWeight: sel ? 700 : 500,
+        color: sel ? T.text : T.textMid, pointerEvents: "none",
+        background: (sel || hov) ? "rgba(255,255,255,0.9)" : "transparent",
+        padding: (sel || hov) ? "2px 6px" : 0, borderRadius: 6, transition: "all 0.15s",
+      }}>
+        {mun.nombre}
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+//  APP PRINCIPAL
+// ─────────────────────────────────────────────
+export default function App() {
+  const [municipios, setMunicipios] = useState([]);
+  const [activo, setActivo]         = useState(null);
+  const [vista, setVista]           = useState("mapa");
+  const [filtro, setFiltro]         = useState("Todos");
+  const [usuario, setUsuario]       = useState(null);
+  const [articulos, setArticulos]   = useState([]);
+  const [cargando, setCargando]     = useState(true);
+
+  // Carga inicial de datos
+  useEffect(() => {
+    const cargarDatos = async () => {
+      setCargando(true);
+      const [{ data: munis }, { data: arts }, user] = await Promise.all([
+        getMunicipios(),
+        getArticulos(),
+        getUsuarioActual(),
+      ]);
+      setMunicipios(munis || []);
+      setArticulos(arts || []);
+      setUsuario(user);
+      setCargando(false);
+    };
+    cargarDatos();
+
+    // Escuchar cambios de sesión (cuando el usuario valida su email)
+    // Importar supabase directamente para el listener
+    import('./lib/supabase').then(({ supabase }) => {
+      const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+        setUsuario(session?.user || null);
+      });
+      return () => listener.subscription.unsubscribe();
+    });
+  }, []);
+
+  // Inyectar fuente y animaciones
+  useEffect(() => {
+    const link = document.createElement("link");
+    link.href = "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap";
+    link.rel = "stylesheet"; document.head.appendChild(link);
+    const s = document.createElement("style");
+    s.textContent = `
+      @keyframes slideIn { from{transform:translateX(20px);opacity:0} to{transform:translateX(0);opacity:1} }
+      @keyframes fadeUp  { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
+      @keyframes ripple  { 0%{transform:scale(1);opacity:0.5} 100%{transform:scale(1.7);opacity:0} }
+      @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+      * { box-sizing:border-box; }
+      ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:transparent}
+      ::-webkit-scrollbar-thumb{background:${T.borderMid};border-radius:2px}
+    `;
+    document.head.appendChild(s);
+  }, []);
+
+  const regiones = ["Todos", "CABA", "GBA Norte", "GBA Oeste", "GBA Sur"];
+  const filtrados = filtro === "Todos" ? municipios : municipios.filter(m => m.region === filtro);
+
+  const mejor = municipios.length ? [...municipios].sort((a, b) => (b.puntaje_global || 0) - (a.puntaje_global || 0))[0] : null;
+  const peor  = municipios.length ? [...municipios].sort((a, b) => (a.puntaje_global || 0) - (b.puntaje_global || 0))[0] : null;
+  const prom  = municipios.length ? (municipios.reduce((a, m) => a + (m.puntaje_global || 0), 0) / municipios.length).toFixed(2) : "0.00";
+  const totalVotos = municipios.reduce((a, m) => a + (m.total_votos || 0), 0).toLocaleString("es-AR");
+
+  return (
+    <div style={{ fontFamily: "'Manrope', sans-serif", background: T.bgWarm, color: T.text, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+
+      {/* NAVBAR */}
+      <nav style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", borderBottom: `1px solid ${T.border}`, padding: "0 32px", display: "flex", alignItems: "center", height: 62, gap: 32, position: "sticky", top: 0, zIndex: 50, boxShadow: `0 1px 0 ${T.border}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 12, background: T.orange, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>📍</div>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>Muni<span style={{ color: T.orange }}>Score</span></div>
+            <div style={{ fontSize: 9, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>Gestión Urbanística AMBA</div>
+          </div>
+        </div>
+
+        {[["mapa", "Mapa"], ["noticias", "Noticias"], ["metodologia", "Metodología"]].map(([v, l]) => (
+          <button key={v} onClick={() => setVista(v)} style={{ background: "none", border: "none", padding: "22px 0", cursor: "pointer", borderBottom: vista === v ? `2px solid ${T.orange}` : "2px solid transparent", color: vista === v ? T.text : T.textMid, fontWeight: vista === v ? 700 : 500, fontSize: 14, fontFamily: "inherit" }}>{l}</button>
+        ))}
+
+        <div style={{ flex: 1 }} />
+
+        {/* Indicador de sesión */}
+        {usuario
+          ? <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 12, color: T.textMid }}>✓ {usuario.email}</span>
+              <button onClick={cerrarSesion} style={{ fontSize: 12, color: T.textLight, background: "none", border: `1px solid ${T.border}`, padding: "6px 12px", borderRadius: T.radiusSm, cursor: "pointer", fontFamily: "inherit" }}>Salir</button>
+            </div>
+          : <BtnPrimary>Calificar municipio</BtnPrimary>
+        }
+      </nav>
+
+      {/* VISTA: MAPA */}
+      {vista === "mapa" && (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          {/* Stats */}
+          <div style={{ background: T.bg, borderBottom: `1px solid ${T.border}`, padding: "14px 32px", display: "flex", gap: 40, alignItems: "center", flexWrap: "wrap" }}>
+            {cargando
+              ? [1,2,3,4].map(i => <Skeleton key={i} w={120} h={34} />)
+              : [
+                  { label: "Promedio AMBA",    val: prom + " / 5.0",  col: getScore(parseFloat(prom)).c },
+                  { label: "Evaluaciones",     val: totalVotos,        col: T.blue },
+                  { label: "Mejor índice",     val: mejor?.nombre,     col: T.green },
+                  { label: "Mayor dificultad", val: peor?.nombre,      col: T.red },
+                ].map((s, i) => (
+                  <div key={i}>
+                    <p style={{ margin: 0, fontSize: 10, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>{s.label}</p>
+                    <p style={{ margin: "2px 0 0", fontSize: 15, fontWeight: 800, color: s.col }}>{s.val || "—"}</p>
+                  </div>
+                ))
+            }
+            <div style={{ flex: 1 }} />
+            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+              {[[T.green, "≥ 4.0 Favorable"], [T.yellow, "3–3.9 Moderado"], [T.red, "< 3.0 Difícil"]].map(([c, l]) => (
+                <div key={l} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: c }} />
+                  <span style={{ fontSize: 12, color: T.textMid }}>{l}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Filtros */}
+          <div style={{ padding: "12px 32px", background: T.bgWarm, borderBottom: `1px solid ${T.border}`, display: "flex", gap: 8 }}>
+            {regiones.map(r => (
+              <button key={r} onClick={() => setFiltro(r)} style={{ padding: "6px 16px", borderRadius: 99, background: filtro === r ? T.text : T.bg, border: `1.5px solid ${filtro === r ? T.text : T.border}`, color: filtro === r ? "#fff" : T.textMid, fontWeight: filtro === r ? 700 : 500, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{r}</button>
+            ))}
+          </div>
+
+          {/* Mapa */}
+          <div style={{ flex: 1, position: "relative", overflow: "hidden", minHeight: 500 }}>
+            <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 65% 35%, #E8F4F8 0%, ${T.bgWarm} 55%, #F0EDE8 100%)`, backgroundImage: `radial-gradient(ellipse at 65% 35%, #E8F4F8 0%, ${T.bgWarm} 55%, #F0EDE8 100%), linear-gradient(${T.border}88 1px, transparent 1px), linear-gradient(90deg, ${T.border}88 1px, transparent 1px)`, backgroundSize: "100%, 52px 52px, 52px 52px" }} />
+
+            <div style={{ position: "absolute", top: 20, left: 32, fontSize: 11, color: T.textLight, letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>
+              Gran Buenos Aires · CABA · {new Date().getFullYear()}
+            </div>
+
+            {!activo && !cargando && (
+              <div style={{ position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "rgba(255,255,255,0.96)", backdropFilter: "blur(8px)", border: `1px solid ${T.border}`, borderRadius: 99, padding: "10px 22px", fontSize: 13, color: T.textMid, boxShadow: T.shadow, whiteSpace: "nowrap", animation: "fadeUp 0.5s ease" }}>
+                👆 Seleccioná un municipio para ver su índice completo
+              </div>
+            )}
+
+            {cargando
+              ? <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: T.textLight }}>Cargando municipios...</div>
+              : filtrados.map(m => (
+                  <Nodo key={m.id} mun={m} activo={activo} onClick={m => setActivo(prev => prev?.id === m.id ? null : m)} />
+                ))
+            }
+
+            {activo && <PanelMunicipio mun={activo} usuario={usuario} onClose={() => setActivo(null)} />}
+          </div>
+        </div>
+      )}
+
+      {/* VISTA: NOTICIAS */}
+      {vista === "noticias" && (
+        <div style={{ flex: 1, maxWidth: 1040, margin: "0 auto", width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease" }}>
+          <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Blog & Noticias</p>
+          <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>Para <span style={{ color: T.orange }}>desarrolladores</span> e inversores</h1>
+          <p style={{ fontSize: 15, color: T.textMid, margin: "0 0 40px" }}>Normativa, análisis y novedades del sector en el AMBA.</p>
+
+          {cargando
+            ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(290px,1fr))", gap: 22 }}>
+                {[1,2,3].map(i => <Skeleton key={i} h={320} radius={16} />)}
+              </div>
+            : articulos.length === 0
+              ? <p style={{ color: T.textLight, textAlign: "center", marginTop: 60 }}>No hay artículos publicados todavía.</p>
+              : <>
+                  {articulos.find(a => a.destacado) && (() => {
+                    const dest = articulos.find(a => a.destacado);
+                    return (
+                      <div style={{ display: "flex", borderRadius: T.radiusXl, overflow: "hidden", background: T.bg, boxShadow: T.shadowHover, border: `1px solid ${T.border}`, marginBottom: 32, cursor: "pointer" }}>
+                        {dest.imagen_url && <div style={{ width: "42%", flexShrink: 0, overflow: "hidden", minHeight: 260 }}><img src={dest.imagen_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => e.target.style.display = "none"} /></div>}
+                        <div style={{ padding: "32px 36px" }}>
+                          <Pill label="DESTACADO" color={T.orange} />
+                          <h2 style={{ margin: "12px 0 12px", fontSize: 22, fontWeight: 800, color: T.text, lineHeight: 1.35 }}>{dest.titulo}</h2>
+                          <p style={{ fontSize: 14, color: T.textMid, lineHeight: 1.7, margin: "0 0 16px" }}>{dest.resumen}</p>
+                          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                            <span style={{ fontSize: 12, color: T.textLight }}>{formatFecha(dest.created_at)}</span>
+                            <span style={{ fontSize: 13, color: T.orange, fontWeight: 700 }}>Leer artículo →</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(290px,1fr))", gap: 22 }}>
+                    {articulos.filter(a => !a.destacado).map((n, i) => (
+                      <div key={i} style={{ background: T.bg, borderRadius: T.radiusXl, overflow: "hidden", border: `1px solid ${T.border}`, cursor: "pointer", boxShadow: T.shadowCard, transition: "box-shadow 0.2s, transform 0.2s" }}
+                        onMouseEnter={e => { e.currentTarget.style.boxShadow = T.shadowHover; e.currentTarget.style.transform = "translateY(-4px)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.boxShadow = T.shadowCard; e.currentTarget.style.transform = "translateY(0)"; }}
+                      >
+                        {n.imagen_url && <div style={{ height: 180, overflow: "hidden", background: T.bgMuted }}><img src={n.imagen_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => e.target.style.display = "none"} /></div>}
+                        <div style={{ padding: "20px 22px 22px" }}>
+                          <div style={{ marginBottom: 12 }}><Pill label={n.categoria} color={T.blue} /></div>
+                          <h3 style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 700, color: T.text, lineHeight: 1.45 }}>{n.titulo}</h3>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: 12, color: T.textLight }}>{formatFecha(n.created_at)}</span>
+                            <span style={{ fontSize: 13, color: T.orange, fontWeight: 700 }}>Leer →</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+          }
+        </div>
+      )}
+
+      {/* VISTA: METODOLOGÍA */}
+      {vista === "metodologia" && (
+        <div style={{ flex: 1, maxWidth: 740, margin: "0 auto", width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease" }}>
+          <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Transparencia</p>
+          <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>Metodología & <span style={{ color: T.orange }}>Privacidad</span></h1>
+          <p style={{ fontSize: 15, color: T.textMid, marginBottom: 36, lineHeight: 1.7 }}>MuniScore es una herramienta de inteligencia colectiva. Los índices reflejan la experiencia de los usuarios, no la posición de ninguna organización ni partido político.</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {[
+              { icon: "⚖️", titulo: "¿Cómo se calcula el índice?", texto: `Transparencia (25%) · Velocidad de aprobación (20%) · Claridad normativa (20%) · Previsibilidad (15%) · Atención al público (10%) · Carga impositiva (10%). El promedio ponderado de todas las encuestas válidas genera el índice de cada municipio.` },
+              { icon: "🙋", titulo: "¿Quién puede participar?", texto: "Desarrolladores, constructores, arquitectos, ingenieros y vecinos que construyeron su vivienda. Recomendamos calificar solo municipios donde hayas trabajado, aunque no hay restricción formal." },
+              { icon: "🛡️", titulo: "¿Cómo se evitan votos duplicados?", texto: "Cada email puede votar una sola vez por municipio. El sistema valida el email antes de registrar el voto." },
+              { icon: "🔒", titulo: "Privacidad de tus datos", texto: "Almacenamos únicamente el hash de tu email, la fecha del voto y los puntajes. Cumplimos con la Ley 25.326 de Protección de Datos Personales de la República Argentina." },
+            ].map((s, i) => (
+              <div key={i} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "22px 26px", display: "flex", gap: 18, boxShadow: T.shadowCard }}>
+                <div style={{ fontSize: 26 }}>{s.icon}</div>
+                <div>
+                  <p style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 700, color: T.text }}>{s.titulo}</p>
+                  <p style={{ margin: 0, fontSize: 13, color: T.textMid, lineHeight: 1.7 }}>{s.texto}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Sponsor */}
+          <div style={{ marginTop: 32, padding: "22px 26px", borderRadius: T.radiusXl, background: `linear-gradient(135deg, ${T.orangeSoft}, #FFF)`, border: `1.5px solid ${T.orangeMid}`, display: "flex", alignItems: "center", gap: 18 }}>
+            <div style={{ width: 52, height: 52, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, boxShadow: T.shadowCard }}>🤝</div>
+            <div>
+              <p style={{ margin: "0 0 3px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>Patrocinios</p>
+              <p style={{ margin: 0, fontSize: 14, color: T.textMid }}>¿Tu empresa quiere llegar a desarrolladores del AMBA? <span style={{ color: T.orange, fontWeight: 700, cursor: "pointer" }}>Hablemos →</span></p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <footer style={{ borderTop: `1px solid ${T.border}`, padding: "20px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", background: T.bg, fontSize: 13, color: T.textLight, flexWrap: "wrap", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontWeight: 800, fontSize: 15, color: T.text }}>Muni<span style={{ color: T.orange }}>Score</span></span>
+          <span style={{ color: T.borderMid }}>·</span>
+          <span>© 2025 · Índice de Gestión Urbanística del AMBA</span>
+        </div>
+        <div style={{ display: "flex", gap: 22 }}>
+          {["Términos", "Privacidad", "Contacto"].map(l => <span key={l} style={{ cursor: "pointer" }}>{l}</span>)}
+        </div>
+      </footer>
+    </div>
+  );
+}
