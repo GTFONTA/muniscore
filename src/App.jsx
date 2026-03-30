@@ -20,6 +20,7 @@ import {
   cerrarSesion,
   yaVoto,
 } from './lib/supabase';
+import MapaPoligonos from './components/MapaPoligonos';
 
 // ─────────────────────────────────────────────
 //  TOKENS DE DISEÑO — estilo Airbnb
@@ -443,50 +444,8 @@ const PanelMunicipio = ({ mun, usuario, onClose }) => {
 // NOTA: En la versión de producción estos nodos se reemplazan
 // por polígonos GeoJSON reales usando Leaflet.js.
 // Este componente sirve como placeholder visual.
-const POSICIONES = {
-  "caba":              { x: 62, y: 25 }, "vicente-lopez":   { x: 62, y: 18 },
-  "san-isidro":        { x: 63, y: 11 }, "san-fernando":    { x: 63, y: 5  },
-  "tigre":             { x: 56, y: 3  }, "pilar":           { x: 42, y: 3  },
-  "san-martin":        { x: 49, y: 17 }, "tres-febrero":    { x: 42, y: 15 },
-  "moron":             { x: 36, y: 22 }, "la-matanza":      { x: 29, y: 28 },
-  "merlo":             { x: 24, y: 24 }, "moreno":          { x: 17, y: 18 },
-  "avellaneda":        { x: 62, y: 32 }, "lanus":           { x: 56, y: 35 },
-  "lomas-zamora":      { x: 49, y: 36 }, "quilmes":         { x: 67, y: 36 },
-  "berazategui":       { x: 72, y: 39 }, "florencio-varela":{ x: 68, y: 44 },
-};
 
-const Nodo = ({ mun, activo, onClick }) => {
-  const [hov, setHov] = useState(false);
-  const pos = POSICIONES[mun.geojson_id] || { x: 50, y: 50 };
-  const { c, soft, mid } = getScore(mun.puntaje_global || 0);
-  const sel = activo?.id === mun.id;
 
-  return (
-    <div onClick={() => onClick(mun)} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      style={{ position: "absolute", left: `${pos.x}%`, top: `${pos.y + 5}%`, transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: sel ? 10 : hov ? 5 : 1 }}>
-      {sel && <div style={{ position: "absolute", inset: -6, borderRadius: "50%", border: `2px solid ${c}`, animation: "ripple 1.8s ease-out infinite", opacity: 0.5 }} />}
-      <div style={{
-        width: 44, height: 44, borderRadius: "50%",
-        background: sel ? c : soft, border: `2px solid ${sel ? c : mid}`,
-        boxShadow: sel ? `0 6px 24px ${c}55` : hov ? `0 4px 16px ${c}44` : T.shadowCard,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontWeight: 800, fontSize: 12, color: sel ? "#fff" : c,
-        transition: "all 0.2s", transform: sel ? "scale(1.2)" : hov ? "scale(1.1)" : "scale(1)"
-      }}>
-        {(mun.puntaje_global || 0).toFixed(1)}
-      </div>
-      <div style={{
-        position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", marginTop: 5,
-        whiteSpace: "nowrap", fontSize: 9.5, fontWeight: sel ? 700 : 500,
-        color: sel ? T.text : T.textMid, pointerEvents: "none",
-        background: (sel || hov) ? "rgba(255,255,255,0.9)" : "transparent",
-        padding: (sel || hov) ? "2px 6px" : 0, borderRadius: 6, transition: "all 0.15s",
-      }}>
-        {mun.nombre}
-      </div>
-    </div>
-  );
-};
 
 // ─────────────────────────────────────────────
 //  APP PRINCIPAL
@@ -556,7 +515,7 @@ export default function App() {
     <div style={{ fontFamily: "'Manrope', sans-serif", background: T.bgWarm, color: T.text, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
 
       {/* NAVBAR */}
-      <nav style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", borderBottom: `1px solid ${T.border}`, padding: "0 32px", display: "flex", alignItems: "center", height: 62, gap: 32, position: "sticky", top: 0, zIndex: 50, boxShadow: `0 1px 0 ${T.border}` }}>
+      <nav style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", borderBottom: `1px solid ${T.border}`, padding: "0 32px", display: "flex", alignItems: "center", height: 62, gap: 32, position: "sticky", top: 0, zIndex: 50, boxShadow: `0 1px 0 ${T.border}` , position: "sticky", top: 0, zIndex: 1000}}>
         <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
           <div style={{ width: 38, height: 38, borderRadius: 12, background: T.orange, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>📍</div>
           <div>
@@ -600,7 +559,9 @@ export default function App() {
                   </div>
                 ))
             }
-            <div style={{ flex: 1 }} />
+            <div style={{ width: '100%', padding: '0 16px' }}>
+              <MapaPoligonos municipios={municipios} />
+            </div>
             <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
               {[[T.green, "≥ 4.0 Favorable"], [T.yellow, "3–3.9 Moderado"], [T.red, "< 3.0 Difícil"]].map(([c, l]) => (
                 <div key={l} style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -609,37 +570,6 @@ export default function App() {
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Filtros */}
-          <div style={{ padding: "12px 32px", background: T.bgWarm, borderBottom: `1px solid ${T.border}`, display: "flex", gap: 8 }}>
-            {regiones.map(r => (
-              <button key={r} onClick={() => setFiltro(r)} style={{ padding: "6px 16px", borderRadius: 99, background: filtro === r ? T.text : T.bg, border: `1.5px solid ${filtro === r ? T.text : T.border}`, color: filtro === r ? "#fff" : T.textMid, fontWeight: filtro === r ? 700 : 500, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{r}</button>
-            ))}
-          </div>
-
-          {/* Mapa */}
-          <div style={{ flex: 1, position: "relative", overflow: "hidden", minHeight: 500 }}>
-            <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 65% 35%, #E8F4F8 0%, ${T.bgWarm} 55%, #F0EDE8 100%)`, backgroundImage: `radial-gradient(ellipse at 65% 35%, #E8F4F8 0%, ${T.bgWarm} 55%, #F0EDE8 100%), linear-gradient(${T.border}88 1px, transparent 1px), linear-gradient(90deg, ${T.border}88 1px, transparent 1px)`, backgroundSize: "100%, 52px 52px, 52px 52px" }} />
-
-            <div style={{ position: "absolute", top: 20, left: 32, fontSize: 11, color: T.textLight, letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>
-              Gran Buenos Aires · CABA · {new Date().getFullYear()}
-            </div>
-
-            {!activo && !cargando && (
-              <div style={{ position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "rgba(255,255,255,0.96)", backdropFilter: "blur(8px)", border: `1px solid ${T.border}`, borderRadius: 99, padding: "10px 22px", fontSize: 13, color: T.textMid, boxShadow: T.shadow, whiteSpace: "nowrap", animation: "fadeUp 0.5s ease" }}>
-                👆 Seleccioná un municipio para ver su índice completo
-              </div>
-            )}
-
-            {cargando
-              ? <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: T.textLight }}>Cargando municipios...</div>
-              : filtrados.map(m => (
-                  <Nodo key={m.id} mun={m} activo={activo} onClick={m => setActivo(prev => prev?.id === m.id ? null : m)} />
-                ))
-            }
-
-            {activo && <PanelMunicipio mun={activo} usuario={usuario} onClose={() => setActivo(null)} />}
           </div>
         </div>
       )}
