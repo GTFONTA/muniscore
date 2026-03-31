@@ -7,7 +7,7 @@
 //  Para cambiar colores → editá el objeto T al principio
 //  Para cambiar pesos de encuesta → editá PREGUNTAS más abajo
 // ============================================================
-
+import ModalCalificar from './components/ModalCalificar';
 import { useState, useEffect, useCallback } from 'react';
 import {
   getMunicipios,
@@ -458,6 +458,7 @@ export default function App() {
   const [usuario, setUsuario]       = useState(null);
   const [articulos, setArticulos]   = useState([]);
   const [cargando, setCargando]     = useState(true);
+  const [mostrarModalCalificar, setMostrarModalCalificar] = useState(false);
 
   // Carga inicial de datos
   useEffect(() => {
@@ -536,9 +537,24 @@ export default function App() {
               <span style={{ fontSize: 12, color: T.textMid }}>✓ {usuario.email}</span>
               <button onClick={cerrarSesion} style={{ fontSize: 12, color: T.textLight, background: "none", border: `1px solid ${T.border}`, padding: "6px 12px", borderRadius: T.radiusSm, cursor: "pointer", fontFamily: "inherit" }}>Salir</button>
             </div>
-          : <BtnPrimary>Calificar municipio</BtnPrimary>
+          : <BtnPrimary onClick={() => setMostrarModalCalificar(true)}>Calificar municipio</BtnPrimary>
         }
       </nav>
+      {mostrarModalCalificar && (
+        <ModalCalificar
+          alCerrar={() => setMostrarModalCalificar(false)}
+          alConfirmarMunicipio={(municipioElegido) => {
+            // Busca el municipio en la lista y abre la encuesta
+            const mun = municipios.find(
+              m => m.nombre.toLowerCase() === municipioElegido.toLowerCase()
+            );
+            if (mun) {
+              setActivo(mun);
+            }
+            setMostrarModalCalificar(false);
+          }}
+        />
+      )}
 
       {/* VISTA: MAPA */}
       {vista === "mapa" && (
