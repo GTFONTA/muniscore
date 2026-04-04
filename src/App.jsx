@@ -1,5 +1,5 @@
 // ============================================================
-//  App.jsx — Componente principal de MuniScore
+//  App.jsx — Componente principal de Munilupa
 //
 //  Este archivo conecta el diseño visual con Supabase.
 //  Los datos ya no son ficticios: vienen de la base de datos.
@@ -19,6 +19,8 @@ import {
   getUsuarioActual,
   cerrarSesion,
   yaVoto,
+  getComentariosPublicos,
+  enviarContacto,
 } from './lib/supabase';
 import MapaPoligonos from './components/MapaPoligonos';
 
@@ -157,6 +159,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
   const [pts, setPts] = useState({ transparencia: 0, velocidad: 0, normativa: 0, impuestos: 0, atencion: 0, previsibilidad: 0 });
   const [meses, setMeses] = useState("");
   const [tipo, setTipo] = useState("");
+  const [comentario, setComentario] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
   const [linkEnviado, setLinkEnviado] = useState(false);
@@ -189,6 +192,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
       puntajePrevisibilidad:  pts.previsibilidad,
       mesesAprobacion:        meses ? parseInt(meses) : null,
       tipoProyecto:           tipo || null,
+      comentario:             comentario.trim() || null,
     });
 
     setCargando(false);
@@ -277,7 +281,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
             ))}
             <div style={{ padding: 18, borderRadius: T.radius, background: T.bgWarm, border: `1px solid ${T.border}`, marginTop: 8, marginBottom: 24 }}>
               <p style={{ margin: "0 0 14px", fontSize: 13, fontWeight: 600, color: T.text }}>Datos opcionales</p>
-              <div style={{ display: "flex", gap: 12 }}>
+              <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
                 <select value={tipo} onChange={e => setTipo(e.target.value)} style={{ flex: 1, padding: "10px 14px", borderRadius: T.radiusSm, border: `1px solid ${T.border}`, background: T.bg, color: tipo ? T.text : T.textLight, fontSize: 13, fontFamily: "inherit" }}>
                   <option value="">Tipo de proyecto</option>
                   {["Casa unifamiliar", "Edificio", "Industrial", "Comercial", "Otro"].map(o => <option key={o}>{o}</option>)}
@@ -286,6 +290,17 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
                   style={{ width: 110, padding: "10px 14px", borderRadius: T.radiusSm, border: `1px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 13, fontFamily: "inherit" }}
                 />
               </div>
+              <textarea
+                placeholder="Comentario anónimo sobre tu experiencia en este municipio (opcional)..."
+                value={comentario}
+                onChange={e => setComentario(e.target.value)}
+                maxLength={600}
+                rows={3}
+                style={{ width: "100%", padding: "10px 14px", borderRadius: T.radiusSm, border: `1px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 13, fontFamily: "inherit", resize: "vertical", outline: "none", boxSizing: "border-box" }}
+              />
+              {comentario.length > 0 && (
+                <p style={{ margin: "4px 0 0", fontSize: 11, color: T.textLight, textAlign: "right" }}>{comentario.length}/600</p>
+              )}
             </div>
             <BtnPrimary full onClick={handleEnviar} disabled={!listo || cargando}>
               {cargando ? "Enviando..." : listo ? "Enviar mi calificación →" : `Completá todas las categorías (${prog}/6)`}
@@ -459,6 +474,16 @@ export default function App() {
   const [articulos, setArticulos]   = useState([]);
   const [cargando, setCargando]     = useState(true);
   const [mostrarModalCalificar, setMostrarModalCalificar] = useState(false);
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  // Tarea 4 — comentarios comunidad en Noticias
+  const [comentariosComunidad, setComentariosComunidad] = useState([]);
+  const [cargandoComments, setCargandoComments]         = useState(false);
+  const [filtroComMunicipio, setFiltroComMunicipio]     = useState("");
+  // Tarea 6 — formulario de contacto
+  const [contactForm, setContactForm]       = useState({ nombre: "", email: "", tipoConsulta: "", mensaje: "" });
+  const [enviandoContacto, setEnviandoContacto] = useState(false);
+  const [contactoEnviado, setContactoEnviado]   = useState(false);
+  const [errorContacto, setErrorContacto]       = useState(null);
 
   // Carga inicial de datos
   useEffect(() => {
@@ -486,6 +511,19 @@ export default function App() {
     });
   }, []);
 
+  // Cargar comentarios de la comunidad cuando se abre la sección Noticias
+  useEffect(() => {
+    if (vista !== "noticias") return;
+    setCargandoComments(true);
+    const munId = filtroComMunicipio
+      ? municipios.find(m => m.nombre === filtroComMunicipio)?.id || null
+      : null;
+    getComentariosPublicos(munId, 40).then(({ data }) => {
+      setComentariosComunidad(data || []);
+      setCargandoComments(false);
+    });
+  }, [vista, filtroComMunicipio]);
+
   // Inyectar fuente y animaciones
   useEffect(() => {
     const link = document.createElement("link");
@@ -500,6 +538,13 @@ export default function App() {
       * { box-sizing:border-box; }
       ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:transparent}
       ::-webkit-scrollbar-thumb{background:${T.borderMid};border-radius:2px}
+      .nav-links { display:flex; gap:0; align-items:center; }
+      .nav-cta   { display:flex; align-items:center; }
+      .nav-hamburger { display:none; background:none; border:none; font-size:22px; cursor:pointer; color:${T.text}; padding:8px; line-height:1; }
+      @media (max-width:768px) {
+        .nav-links, .nav-cta { display:none !important; }
+        .nav-hamburger { display:block !important; }
+      }
     `;
     document.head.appendChild(s);
   }, []);
@@ -520,26 +565,53 @@ export default function App() {
         <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
           <div style={{ width: 38, height: 38, borderRadius: 12, background: T.orange, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>📍</div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>Muni<span style={{ color: T.orange }}>Score</span></div>
-            <div style={{ fontSize: 9, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>Gestión Urbanística AMBA</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>Muni<span style={{ color: T.orange }}>lupa</span></div>
+            <div style={{ fontSize: 9, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>Gestión Municipal a la vista</div>
           </div>
         </div>
 
-        {[["mapa", "Mapa"], ["noticias", "Noticias"], ["metodologia", "Metodología"]].map(([v, l]) => (
-          <button key={v} onClick={() => setVista(v)} style={{ background: "none", border: "none", padding: "22px 0", cursor: "pointer", borderBottom: vista === v ? `2px solid ${T.orange}` : "2px solid transparent", color: vista === v ? T.text : T.textMid, fontWeight: vista === v ? 700 : 500, fontSize: 14, fontFamily: "inherit" }}>{l}</button>
-        ))}
+        <div className="nav-links">
+          {[["mapa", "Mapa"], ["noticias", "Noticias"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
+            <button key={v} onClick={() => setVista(v)} style={{ background: "none", border: "none", padding: "22px 16px", cursor: "pointer", borderBottom: vista === v ? `2px solid ${T.orange}` : "2px solid transparent", color: vista === v ? T.text : T.textMid, fontWeight: vista === v ? 700 : 500, fontSize: 14, fontFamily: "inherit" }}>{l}</button>
+          ))}
+        </div>
 
         <div style={{ flex: 1 }} />
 
-        {/* Indicador de sesión */}
-        {usuario
-          ? <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span style={{ fontSize: 12, color: T.textMid }}>✓ {usuario.email}</span>
-              <button onClick={cerrarSesion} style={{ fontSize: 12, color: T.textLight, background: "none", border: `1px solid ${T.border}`, padding: "6px 12px", borderRadius: T.radiusSm, cursor: "pointer", fontFamily: "inherit" }}>Salir</button>
-            </div>
-          : <BtnPrimary onClick={() => setMostrarModalCalificar(true)}>Calificar municipio</BtnPrimary>
-        }
+        {/* Indicador de sesión — desktop */}
+        <div className="nav-cta">
+          {usuario
+            ? <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 12, color: T.textMid }}>✓ {usuario.email}</span>
+                <button onClick={cerrarSesion} style={{ fontSize: 12, color: T.textLight, background: "none", border: `1px solid ${T.border}`, padding: "6px 12px", borderRadius: T.radiusSm, cursor: "pointer", fontFamily: "inherit" }}>Salir</button>
+              </div>
+            : <BtnPrimary onClick={() => setMostrarModalCalificar(true)}>Calificar municipio</BtnPrimary>
+          }
+        </div>
+
+        {/* Botón hamburguesa — mobile */}
+        <button className="nav-hamburger" onClick={() => setMenuAbierto(m => !m)}>
+          {menuAbierto ? "✕" : "☰"}
+        </button>
       </nav>
+
+      {/* Menú desplegable mobile */}
+      {menuAbierto && (
+        <div style={{ position: "fixed", top: 62, left: 0, right: 0, background: T.bg, borderBottom: `1px solid ${T.border}`, padding: "12px 24px 20px", display: "flex", flexDirection: "column", gap: 0, zIndex: 999, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}>
+          {[["mapa", "Mapa"], ["noticias", "Noticias"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
+            <button key={v} onClick={() => { setVista(v); setMenuAbierto(false); }} style={{ background: "none", border: "none", textAlign: "left", padding: "13px 0", cursor: "pointer", borderBottom: `1px solid ${T.border}`, color: vista === v ? T.orange : T.text, fontWeight: vista === v ? 700 : 500, fontSize: 15, fontFamily: "inherit" }}>{l}</button>
+          ))}
+          <div style={{ marginTop: 14 }}>
+            {usuario
+              ? <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ fontSize: 12, color: T.textMid }}>✓ {usuario.email}</span>
+                  <button onClick={() => { cerrarSesion(); setMenuAbierto(false); }} style={{ fontSize: 12, color: T.textLight, background: "none", border: `1px solid ${T.border}`, padding: "6px 12px", borderRadius: T.radiusSm, cursor: "pointer", fontFamily: "inherit" }}>Salir</button>
+                </div>
+              : <BtnPrimary full onClick={() => { setMostrarModalCalificar(true); setMenuAbierto(false); }}>Calificar municipio</BtnPrimary>
+            }
+          </div>
+        </div>
+      )}
       {mostrarModalCalificar && (
         <ModalCalificar
           alCerrar={() => setMostrarModalCalificar(false)}
@@ -575,8 +647,21 @@ export default function App() {
                   </div>
                 ))
             }
-            <div style={{ width: '100%', padding: '0 16px' }}>
-              <MapaPoligonos municipios={municipios} />
+            <div style={{ width: '100%', padding: '0 16px', position: 'relative' }}>
+              <MapaPoligonos
+                municipios={municipios}
+                onSeleccionar={(mun) => setActivo(mun)}
+              />
+              {activo && (
+                <div style={{ position: 'absolute', inset: 0, zIndex: 1000 }}>
+                  <PanelMunicipio
+                    mun={activo}
+                    usuario={usuario}
+                    onClose={() => setActivo(null)}
+                  />
+                </div>
+              )}
+            </div>
             </div>
             <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
               {[[T.green, "≥ 4.0 Favorable"], [T.yellow, "3–3.9 Moderado"], [T.red, "< 3.0 Difícil"]].map(([c, l]) => (
@@ -587,12 +672,11 @@ export default function App() {
               ))}
             </div>
           </div>
-        </div>
       )}
 
       {/* VISTA: NOTICIAS */}
       {vista === "noticias" && (
-        <div style={{ flex: 1, maxWidth: 1040, margin: "0 auto", width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease" }}>
+        <div style={{ flex: 1, width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease" }}>
           <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Blog & Noticias</p>
           <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>Para <span style={{ color: T.orange }}>desarrolladores</span> e inversores</h1>
           <p style={{ fontSize: 15, color: T.textMid, margin: "0 0 40px" }}>Normativa, análisis y novedades del sector en el AMBA.</p>
@@ -641,15 +725,59 @@ export default function App() {
                   </div>
                 </>
           }
+
+          {/* ── Opiniones de la comunidad ───────────────────── */}
+          <div style={{ marginTop: 56 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
+              <div>
+                <p style={{ margin: "0 0 4px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Comunidad</p>
+                <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>Opiniones anónimas</h2>
+              </div>
+              <select
+                value={filtroComMunicipio}
+                onChange={e => setFiltroComMunicipio(e.target.value)}
+                style={{ padding: "9px 14px", borderRadius: T.radius, border: `1.5px solid ${T.border}`, background: T.bg, color: filtroComMunicipio ? T.text : T.textLight, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}
+              >
+                <option value="">Todos los municipios</option>
+                {municipios.map(m => <option key={m.id} value={m.nombre}>{m.nombre}</option>)}
+              </select>
+            </div>
+
+            {cargandoComments
+              ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 16 }}>
+                  {[1,2,3].map(i => <Skeleton key={i} h={110} radius={14} />)}
+                </div>
+              : comentariosComunidad.length === 0
+                ? <p style={{ color: T.textLight, textAlign: "center", marginTop: 32, fontSize: 14 }}>
+                    Aún no hay opiniones de la comunidad.{!filtroComMunicipio ? " ¡Calificá un municipio para ser el primero!" : ""}
+                  </p>
+                : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 16 }}>
+                    {comentariosComunidad.map((c, i) => (
+                      <div key={i} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "16px 18px", boxShadow: T.shadowCard }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: T.orange }}>
+                            {c.municipios?.nombre || "—"}
+                          </span>
+                          <span style={{ fontSize: 11, color: T.textLight }}>{formatFecha(c.created_at)}</span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: 13, color: T.textMid, lineHeight: 1.6 }}>{c.comentario}</p>
+                        {c.tipo_proyecto && (
+                          <div style={{ marginTop: 10 }}><Pill label={c.tipo_proyecto} color={T.blue} /></div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+            }
+          </div>
         </div>
       )}
 
       {/* VISTA: METODOLOGÍA */}
       {vista === "metodologia" && (
-        <div style={{ flex: 1, maxWidth: 740, margin: "0 auto", width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease" }}>
+        <div style={{ flex: 1, width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease" }}>
           <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Transparencia</p>
           <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>Metodología & <span style={{ color: T.orange }}>Privacidad</span></h1>
-          <p style={{ fontSize: 15, color: T.textMid, marginBottom: 36, lineHeight: 1.7 }}>MuniScore es una herramienta de inteligencia colectiva. Los índices reflejan la experiencia de los usuarios, no la posición de ninguna organización ni partido político.</p>
+          <p style={{ fontSize: 15, color: T.textMid, marginBottom: 36, lineHeight: 1.7 }}>Munilupa es una herramienta de inteligencia colectiva. Los índices reflejan la experiencia de los usuarios, no la posición de ninguna organización ni partido político.</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {[
               { icon: "⚖️", titulo: "¿Cómo se calcula el índice?", texto: `Transparencia (25%) · Velocidad de aprobación (20%) · Claridad normativa (20%) · Previsibilidad (15%) · Atención al público (10%) · Carga impositiva (10%). El promedio ponderado de todas las encuestas válidas genera el índice de cada municipio.` },
@@ -677,12 +805,109 @@ export default function App() {
         </div>
       )}
 
+      {/* VISTA: CONTACTO */}
+      {vista === "contacto" && (
+        <div style={{ flex: 1, width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease" }}>
+          <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Escribinos</p>
+          <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>
+            <span style={{ color: T.orange }}>Contacto</span>
+          </h1>
+          <p style={{ fontSize: 15, color: T.textMid, margin: "0 0 36px", lineHeight: 1.7 }}>
+            ¿Encontraste un error, querés dar feedback o hablar de patrocinios? Completá el formulario y te respondemos.
+          </p>
+
+          {contactoEnviado ? (
+            <div style={{ maxWidth: 520, textAlign: "center", padding: "40px 0" }}>
+              <div style={{ width: 72, height: 72, borderRadius: "50%", background: T.greenSoft, border: `2px solid ${T.greenMid}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 20px" }}>✓</div>
+              <p style={{ fontSize: 18, fontWeight: 700, color: T.text, margin: "0 0 10px" }}>¡Mensaje enviado!</p>
+              <p style={{ fontSize: 14, color: T.textMid, lineHeight: 1.6 }}>Gracias por contactarnos. Te respondemos a la brevedad.</p>
+              <div style={{ marginTop: 24 }}>
+                <BtnGhost onClick={() => { setContactoEnviado(false); setContactForm({ nombre: "", email: "", tipoConsulta: "", mensaje: "" }); }}>Enviar otro mensaje</BtnGhost>
+              </div>
+            </div>
+          ) : (
+            <div style={{ maxWidth: 560 }}>
+              {errorContacto && (
+                <div style={{ padding: "12px 14px", borderRadius: T.radiusSm, background: T.redSoft, border: `1px solid ${T.redMid}`, color: T.red, fontSize: 13, marginBottom: 20 }}>{errorContacto}</div>
+              )}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: T.textMid, marginBottom: 6, letterSpacing: 0.5 }}>NOMBRE</label>
+                    <input
+                      type="text"
+                      placeholder="Tu nombre"
+                      value={contactForm.nombre}
+                      onChange={e => setContactForm(f => ({ ...f, nombre: e.target.value }))}
+                      style={{ width: "100%", padding: "12px 14px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: T.textMid, marginBottom: 6, letterSpacing: 0.5 }}>EMAIL</label>
+                    <input
+                      type="email"
+                      placeholder="tu@email.com"
+                      value={contactForm.email}
+                      onChange={e => setContactForm(f => ({ ...f, email: e.target.value }))}
+                      style={{ width: "100%", padding: "12px 14px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: T.textMid, marginBottom: 6, letterSpacing: 0.5 }}>TIPO DE CONSULTA</label>
+                  <select
+                    value={contactForm.tipoConsulta}
+                    onChange={e => setContactForm(f => ({ ...f, tipoConsulta: e.target.value }))}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: contactForm.tipoConsulta ? T.text : T.textLight, fontSize: 14, fontFamily: "inherit", outline: "none" }}
+                  >
+                    <option value="">Seleccioná una opción</option>
+                    {["Feedback", "Error técnico", "Publicidad / Patrocinio", "Otro"].map(o => <option key={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: T.textMid, marginBottom: 6, letterSpacing: 0.5 }}>MENSAJE</label>
+                  <textarea
+                    placeholder="Escribí tu mensaje..."
+                    value={contactForm.mensaje}
+                    onChange={e => setContactForm(f => ({ ...f, mensaje: e.target.value }))}
+                    rows={5}
+                    maxLength={1000}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 14, fontFamily: "inherit", outline: "none", resize: "vertical", boxSizing: "border-box" }}
+                  />
+                  {contactForm.mensaje.length > 0 && (
+                    <p style={{ margin: "4px 0 0", fontSize: 11, color: T.textLight, textAlign: "right" }}>{contactForm.mensaje.length}/1000</p>
+                  )}
+                </div>
+                <BtnPrimary
+                  full
+                  disabled={enviandoContacto || !contactForm.nombre || !contactForm.email || !contactForm.tipoConsulta || !contactForm.mensaje}
+                  onClick={async () => {
+                    setEnviandoContacto(true); setErrorContacto(null);
+                    const { error } = await enviarContacto({
+                      nombre:       contactForm.nombre,
+                      email:        contactForm.email,
+                      tipoConsulta: contactForm.tipoConsulta,
+                      mensaje:      contactForm.mensaje,
+                    });
+                    setEnviandoContacto(false);
+                    if (error) { setErrorContacto("No se pudo enviar el mensaje. Intentá de nuevo."); return; }
+                    setContactoEnviado(true);
+                  }}
+                >
+                  {enviandoContacto ? "Enviando..." : "Enviar mensaje →"}
+                </BtnPrimary>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* FOOTER */}
       <footer style={{ borderTop: `1px solid ${T.border}`, padding: "20px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", background: T.bg, fontSize: 13, color: T.textLight, flexWrap: "wrap", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontWeight: 800, fontSize: 15, color: T.text }}>Muni<span style={{ color: T.orange }}>Score</span></span>
+          <span style={{ fontWeight: 800, fontSize: 15, color: T.text }}>Muni<span style={{ color: T.orange }}>lupa</span></span>
           <span style={{ color: T.borderMid }}>·</span>
-          <span>© 2025 · Índice de Gestión Urbanística del AMBA</span>
+          <span>© 2025 · Gestión Municipal a la vista</span>
         </div>
         <div style={{ display: "flex", gap: 22 }}>
           {["Términos", "Privacidad", "Contacto"].map(l => <span key={l} style={{ cursor: "pointer" }}>{l}</span>)}

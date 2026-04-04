@@ -158,6 +158,52 @@ export async function getArticulos(limit = 10) {
   return { data, error };
 }
 
+// ── Trae comentarios anónimos de la comunidad ────────────────
+// Usa el campo `comentario` de la tabla encuestas (ya existe).
+// Opcionalmente filtra por municipio_id.
+export async function getComentariosPublicos(municipioId = null, limit = 30) {
+  let query = supabase
+    .from('encuestas')
+    .select('comentario, created_at, tipo_proyecto, municipios(nombre)')
+    .not('comentario', 'is', null)
+    .eq('validado', true)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (municipioId) {
+    query = query.eq('municipio_id', municipioId);
+  }
+
+  const { data, error } = await query;
+  if (error) console.error('Error al cargar comentarios:', error.message);
+  return { data, error };
+}
+
+// ── Envía un mensaje de contacto ─────────────────────────────
+// Requiere la tabla `contactos` en Supabase. SQL para crearla:
+//
+//   CREATE TABLE contactos (
+//     id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+//     nombre        text NOT NULL,
+//     email         text NOT NULL,
+//     tipo_consulta text NOT NULL,
+//     mensaje       text NOT NULL,
+//     created_at    timestamptz DEFAULT now(),
+//     leido         boolean DEFAULT false
+//   );
+//   ALTER TABLE contactos ENABLE ROW LEVEL SECURITY;
+//   CREATE POLICY "insertar" ON contactos FOR INSERT WITH CHECK (true);
+//   CREATE POLICY "leer admins" ON contactos FOR SELECT USING (auth.role() = 'service_role');
+//
+export async function enviarContacto({ nombre, email, tipoConsulta, mensaje }) {
+  const { data, error } = await supabase
+    .from('contactos')
+    .insert({ nombre, email, tipo_consulta: tipoConsulta, mensaje });
+
+  if (error) console.error('Error al enviar contacto:', error.message);
+  return { data, error };
+}
+
 // ── Trae documentos de un municipio ──────────────────────────
 export async function getDocumentos(municipioId) {
   const { data, error } = await supabase

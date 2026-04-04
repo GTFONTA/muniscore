@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"C:/Users/ZN - GF/Desktop/muniscore/src\" -type f -exec ls -lh {} \\\\;)",
+      "Bash(find \"C:/Users/ZN - GF/Desktop/muniscore/public\" -type f -exec ls -lh {} \\\\;)",
+      "Bash(file:*)",
+      "Bash(npm run:*)"
+    ]
+  }
+}

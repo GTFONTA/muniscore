@@ -109,7 +109,3 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
-nav {
-  z-index: 1000;
-  position: relative;
-}

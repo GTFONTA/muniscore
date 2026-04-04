@@ -1,16 +1,82 @@
-# React + Vite
+# Munilupa — Gestión Municipal a la vista
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Plataforma de evaluación colectiva de la gestión urbanística en los municipios del AMBA (Área Metropolitana de Buenos Aires).
 
-Currently, two official plugins are available:
+## ¿Qué es Munilupa?
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Munilupa permite a desarrolladores, constructores, arquitectos e inversores calificar de forma anónima la experiencia de tramitar obras y permisos en cada municipio del Gran Buenos Aires. El índice resultante es público y se actualiza en tiempo real.
 
-## React Compiler
+## Stack tecnológico
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend:** React 19 + Vite 8
+- **Mapas:** Leaflet 1.9 + react-leaflet 5
+- **Backend / Auth / DB:** Supabase
+- **Datos geoespaciales:** GeoJSON AMBA (134 municipios)
 
-## Expanding the ESLint configuration
+## Categorías de evaluación
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+| Categoría | Peso |
+|-----------|------|
+| Transparencia y ausencia de corrupción | 25% |
+| Velocidad de aprobación de planos | 20% |
+| Claridad y accesibilidad de normativas | 20% |
+| Previsibilidad y consistencia | 15% |
+| Atención al público | 10% |
+| Razonabilidad de tasas e impuestos | 10% |
+
+## Instalación y desarrollo local
+
+```bash
+# Clonar el repositorio
+git clone <repo-url>
+cd munilupa
+
+# Instalar dependencias
+npm install
+
+# Configurar variables de entorno
+cp .env.example .env
+# Editá .env con tus credenciales de Supabase
+
+# Iniciar servidor de desarrollo
+npm run dev
+
+# Build para producción
+npm run build
+```
+
+## Variables de entorno requeridas
+
+```
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu-anon-key
+```
+
+## Scripts disponibles
+
+```bash
+npm run dev       # Servidor Vite con HMR en localhost:5173
+npm run build     # Compilar para producción (genera dist/)
+npm run preview   # Previsualizar el build local
+npm run lint      # Validar código con ESLint
+```
+
+## Estructura del proyecto
+
+```
+src/
+├── App.jsx                  # Componente principal, diseño y vistas
+├── main.jsx                 # Entry point React
+├── index.css                # Estilos globales
+├── components/
+│   ├── MapaPoligonos.jsx    # Mapa interactivo Leaflet + GeoJSON
+│   └── ModalCalificar.jsx   # Modal de verificación y selección
+└── lib/
+    └── supabase.js          # Cliente y funciones de base de datos
+public/
+└── municipios-amba.geojson  # Polígonos de los 134 municipios del AMBA
+```
+
+## Licencia
+
+Proyecto privado — todos los derechos reservados.
