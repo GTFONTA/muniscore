@@ -788,8 +788,8 @@ export default function App() {
               <div key={i} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "22px 26px", display: "flex", gap: 18, boxShadow: T.shadowCard }}>
                 <div style={{ fontSize: 26 }}>{s.icon}</div>
                 <div>
-                  <p style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 700, color: T.text }}>{s.titulo}</p>
-                  <p style={{ margin: 0, fontSize: 13, color: T.textMid, lineHeight: 1.7 }}>{s.texto}</p>
+                  <p style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 700, color: T.text, textAlign: "center" }}>{s.titulo}</p>
+                  <p style={{ margin: 0, fontSize: 13, color: T.textMid, lineHeight: 1.7, textAlign: "center" }}>{s.texto}</p>
                 </div>
               </div>
             ))}
@@ -807,7 +807,7 @@ export default function App() {
 
       {/* VISTA: CONTACTO */}
       {vista === "contacto" && (
-        <div style={{ flex: 1, width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease" }}>
+        <div style={{ flex: 1, width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease", display: "flex", flexDirection: "column", alignItems: "center"}}>
           <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Escribinos</p>
           <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>
             <span style={{ color: T.orange }}>Contacto</span>
@@ -826,7 +826,7 @@ export default function App() {
               </div>
             </div>
           ) : (
-            <div style={{ maxWidth: 560 }}>
+            <div style={{ maxWidth: 560, margin: "0 auto" }}>
               {errorContacto && (
                 <div style={{ padding: "12px 14px", borderRadius: T.radiusSm, background: T.redSoft, border: `1px solid ${T.redMid}`, color: T.red, fontSize: 13, marginBottom: 20 }}>{errorContacto}</div>
               )}
