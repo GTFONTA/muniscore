@@ -562,8 +562,8 @@ export default function App() {
 
       {/* NAVBAR */}
       <nav style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", borderBottom: `1px solid ${T.border}`, padding: "0 32px", display: "flex", alignItems: "center", height: 62, gap: 32, position: "sticky", top: 0, zIndex: 50, boxShadow: `0 1px 0 ${T.border}` , position: "sticky", top: 0, zIndex: 1000}}>
-        <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 12, background: T.orange, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>📍</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <img src="/logo-icono.png" alt="MuniLupa ícono" style={{ height: "48px", width: "auto", objectFit: "contain" }} />
           <div>
             <div style={{ fontSize: 18, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>Muni<span style={{ color: T.orange }}>lupa</span></div>
             <div style={{ fontSize: 9, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>Gestión Municipal a la vista</div>
