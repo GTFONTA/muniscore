@@ -10,12 +10,20 @@ function normalizar(str) {
   return str?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim() || '';
 }
 
-// 🎨 Función que decide el color según el puntaje
+// 🎨 Función que decide el color según el puntaje (polígonos del mapa)
 function obtenerColor(puntaje) {
   if (!puntaje || puntaje === 0) return '#CCCCCC'; // Gris: sin datos
   if (puntaje < 3)  return '#E74C3C'; // 🔴 Rojo: difícil (1 a 2.9)
   if (puntaje < 4)  return '#F39C12'; // 🟡 Amarillo: moderado (3 a 3.9)
   return '#27AE60';                   // 🟢 Verde: favorable (4 a 5)
+}
+
+// 🎨 Color del badge en el tooltip (escala más fina)
+function obtenerColorBadge(puntaje) {
+  if (!puntaje || puntaje === 0) return '#9CA3AF';
+  if (puntaje < 2.5) return '#EF4444';
+  if (puntaje < 3.5) return '#F59E0B';
+  return '#10B981';
 }
 
 // Componente interno que accede al mapa para hacer zoom
@@ -111,14 +119,37 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
 
   // ─── Eventos de cada polígono ───────────────────────────
   function onCadaPoligono(feature, layer) {
-    const nombre = feature.properties.departamento;
-    const datos  = municipiosRef.current?.find(m => normalizar(m.nombre) === normalizar(nombre));
-    const puntaje = datos?.puntaje_promedio?.toFixed(1) || 'Sin datos';
+    const nombre     = feature.properties.departamento;
+    const datos      = municipiosRef.current?.find(m => normalizar(m.nombre) === normalizar(nombre));
+    const puntajeRaw = datos?.puntaje_promedio;
+    const puntaje    = puntajeRaw?.toFixed(1) || null;
+    const color      = obtenerColorBadge(puntajeRaw);
+    const barWidth   = puntajeRaw ? Math.round((puntajeRaw / 5) * 100) : 0;
 
-    layer.bindTooltip(
-      `${nombre}\nÍndice: ${puntaje} / 5.0`,
-      { sticky: true, direction: 'top' }
-    );
+    const tooltipHTML = `
+      <div style="padding:10px 14px;min-width:175px;font-family:inherit;">
+        <div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:6px;letter-spacing:0.4px;text-transform:uppercase;">
+          🏛 ${nombre}
+        </div>
+        <div style="height:1px;background:#E8E4DF;margin-bottom:8px;"></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="background:${color};color:white;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.3px;white-space:nowrap;">
+            ${puntaje ? `★ ${puntaje}` : 'Sin datos'}
+          </span>
+          ${puntaje ? `<span style="font-size:12px;color:#9CA3AF;">/ 5.0</span>` : ''}
+        </div>
+        ${puntaje ? `
+        <div style="margin-top:8px;height:4px;background:#F3F0EC;border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${barWidth}%;background:${color};border-radius:4px;"></div>
+        </div>` : ''}
+      </div>
+    `;
+
+    layer.bindTooltip(tooltipHTML, {
+      sticky: true,
+      direction: 'top',
+      className: 'muni-tooltip',
+    });
 
     layer.on({
       mouseover: (e) => {
@@ -141,6 +172,23 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
 
   return (
     <div>
+      <style>{`
+        @keyframes muniTooltipFadeIn {
+          from { opacity: 0; transform: translateY(5px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .leaflet-tooltip.muni-tooltip {
+          background: #FFFFFF;
+          border: none;
+          border-radius: 10px;
+          box-shadow: 0 4px 18px rgba(0,0,0,0.13), 0 1px 4px rgba(0,0,0,0.07);
+          padding: 0;
+          animation: muniTooltipFadeIn 150ms ease;
+        }
+        .leaflet-tooltip.muni-tooltip::before {
+          display: none;
+        }
+      `}</style>
       {/* 🔍 Buscador de municipios */}
       <div ref={busquedaRef} style={{ position: 'relative', marginBottom: 10 }}>
         <input
