@@ -785,11 +785,11 @@ export default function App() {
               { icon: "🛡️", titulo: "¿Cómo se evitan votos duplicados?", texto: "Cada email puede votar una sola vez por municipio. El sistema valida el email antes de registrar el voto." },
               { icon: "🔒", titulo: "Privacidad de tus datos", texto: "Almacenamos únicamente el hash de tu email, la fecha del voto y los puntajes. Cumplimos con la Ley 25.326 de Protección de Datos Personales de la República Argentina." },
             ].map((s, i) => (
-              <div key={i} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "22px 26px", display: "flex", gap: 18, boxShadow: T.shadowCard }}>
-                <div style={{ fontSize: 26, flex: 1, textAlign: "center" }}>{s.icon}</div>
-                <div>
-                  <p style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 700, color: T.text, textAlign: "center" }}>{s.titulo}</p>
-                  <p style={{ margin: 0, fontSize: 13, color: T.textMid, lineHeight: 1.7, textAlign: "center" }}>{s.texto}</p>
+              <div key={i} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "22px 26px", display: "flex", alignItems: "center", gap: 18, boxShadow: T.shadowCard }}>
+                <div style={{ fontSize: 26, width: 40, flexShrink: 0, textAlign: "center" }}>{s.icon}</div>
+                <div style={{ flex: 1, textAlign: "center" }}>
+                  <p style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 700, color: T.text }}>{s.titulo}</p>
+                  <p style={{ margin: 0, fontSize: 13, color: T.textMid, lineHeight: 1.7 }}>{s.texto}</p>
                 </div>
               </div>
             ))}
@@ -797,8 +797,8 @@ export default function App() {
           {/* Sponsor */}
           <div style={{ marginTop: 32, padding: "22px 26px", borderRadius: T.radiusXl, background: `linear-gradient(135deg, ${T.orangeSoft}, #FFF)`, border: `1.5px solid ${T.orangeMid}`, display: "flex", alignItems: "center", gap: 18 }}>
             <div style={{ width: 52, height: 52, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, boxShadow: T.shadowCard }}>🤝</div>
-            <div>
-              <p style={{ margin: "0 0 3px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", alignSelf: "stretch" }}>Patrocinios</p>
+            <div style={{ flex: 1, textAlign: "center" }}>
+              <p style={{ margin: "0 0 3px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>Patrocinios</p>
               <p style={{ margin: 0, fontSize: 14, color: T.textMid }}>¿Tu empresa quiere llegar a desarrolladores del AMBA? <span style={{ color: T.orange, fontWeight: 700, cursor: "pointer" }}>Hablemos →</span></p>
             </div>
           </div>
