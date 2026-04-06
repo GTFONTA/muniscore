@@ -23,6 +23,7 @@ import {
   enviarContacto,
 } from './lib/supabase';
 import MapaPoligonos from './components/MapaPoligonos';
+import NoticiasCarrusel from './components/NoticiasCarrusel';
 
 // ─────────────────────────────────────────────
 //  TOKENS DE DISEÑO — estilo Airbnb
@@ -725,6 +726,9 @@ export default function App() {
                   </div>
                 </>
           }
+
+          {/* ── Noticias externas — carrusel ────────────────── */}
+          <NoticiasCarrusel />
 
           {/* ── Opiniones de la comunidad ───────────────────── */}
           <div style={{ marginTop: 56 }}>
