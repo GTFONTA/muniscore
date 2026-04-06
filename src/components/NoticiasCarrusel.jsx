@@ -58,17 +58,6 @@ const ARTICULOS = [
     alt: "Obra en construcción con grúas en zona urbana",
   },
   {
-    id: 3,
-    titulo: "A más de cuatro meses de la denuncia, la Municipalidad sigue sin informar cuáles son los 400 barrios ilegales",
-    copete:
-      "La Plata mantiene sin respuesta pública una denuncia que señala la existencia de cuatro centenas de asentamientos irregulares dentro del ejido municipal. La falta de transparencia genera interrogantes sobre la planificación territorial y los derechos de los vecinos afectados.",
-    fuente: "0221.com.ar",
-    url: "https://www.0221.com.ar/la-plata/a-mas-cuatro-meses-la-denuncia-la-municipalidad-sigue-informar-cuales-son-los-400-barrios-ilegales-n105712",
-    // Imagen: barrio residencial denso visto desde arriba — Unsplash (libre de uso)
-    imagen: "https://images.unsplash.com/photo-1601979031925-424e53b6caaa?w=600&q=80",
-    alt: "Vista aérea de barrio residencial denso",
-  },
-  {
     id: 4,
     titulo: "Guía de permisos y gestiones para empezar a construir tu casa",
     copete:
@@ -138,7 +127,6 @@ export default function NoticiasCarrusel() {
       <section
         aria-label="Noticias del sector"
         style={{
-          marginTop: 48,
           padding: '40px 0',
           background: T.bgWarm,
           borderRadius: T.radius,

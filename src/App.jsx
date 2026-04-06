@@ -687,7 +687,7 @@ export default function App() {
                 {[1,2,3].map(i => <Skeleton key={i} h={320} radius={16} />)}
               </div>
             : articulos.length === 0
-              ? <p style={{ color: T.textLight, textAlign: "center", marginTop: 60 }}>No hay artículos publicados todavía.</p>
+              ? null
               : <>
                   {articulos.find(a => a.destacado) && (() => {
                     const dest = articulos.find(a => a.destacado);
@@ -728,7 +728,9 @@ export default function App() {
           }
 
           {/* ── Noticias externas — carrusel ────────────────── */}
-          <NoticiasCarrusel />
+          <div style={{ marginTop: articulos.length > 0 ? 48 : 0 }}>
+            <NoticiasCarrusel />
+          </div>
 
           {/* ── Opiniones de la comunidad ───────────────────── */}
           <div style={{ marginTop: 56 }}>
