@@ -799,7 +799,7 @@ export default function App() {
             <div style={{ width: 52, height: 52, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, boxShadow: T.shadowCard }}>🤝</div>
             <div style={{ flex: 1, textAlign: "center" }}>
               <p style={{ margin: "0 0 3px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>Patrocinios</p>
-              <p style={{ margin: 0, fontSize: 14, color: T.textMid }}>¿Tu empresa quiere llegar a desarrolladores del AMBA? <span style={{ color: T.orange, fontWeight: 700, cursor: "pointer" }}>Hablemos →</span></p>
+              <p style={{ margin: 0, fontSize: 14, color: T.textMid }}>¿Tu empresa quiere llegar a desarrolladores del AMBA? <span style={{ color: T.orange, fontWeight: 700, cursor: "pointer" }} onClick={() => setVista("contacto")}>Hablemos →</span></p>
             </div>
           </div>
         </div>
