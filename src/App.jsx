@@ -282,14 +282,17 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
             ))}
             <div style={{ padding: 18, borderRadius: T.radius, background: T.bgWarm, border: `1px solid ${T.border}`, marginTop: 8, marginBottom: 24 }}>
               <p style={{ margin: "0 0 14px", fontSize: 13, fontWeight: 600, color: T.text }}>Datos opcionales</p>
-              <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-                <select value={tipo} onChange={e => setTipo(e.target.value)} style={{ flex: 1, padding: "10px 14px", borderRadius: T.radiusSm, border: `1px solid ${T.border}`, background: T.bg, color: tipo ? T.text : T.textLight, fontSize: 13, fontFamily: "inherit" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+                <select value={tipo} onChange={e => setTipo(e.target.value)} style={{ width: "100%", padding: "10px 14px", borderRadius: T.radiusSm, border: `1px solid ${T.border}`, background: T.bg, color: tipo ? T.text : T.textLight, fontSize: 13, fontFamily: "inherit" }}>
                   <option value="">Tipo de proyecto</option>
                   {["Casa unifamiliar", "Edificio", "Industrial", "Comercial", "Otro"].map(o => <option key={o}>{o}</option>)}
                 </select>
-                <input type="number" placeholder="Meses" value={meses} onChange={e => setMeses(e.target.value)}
-                  style={{ width: 110, padding: "10px 14px", borderRadius: T.radiusSm, border: `1px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 13, fontFamily: "inherit" }}
-                />
+                <div>
+                  <p style={{ margin: "0 0 6px", fontSize: 11, color: T.textLight }}>Meses promedio para obtención de permiso de construcción</p>
+                  <input type="number" placeholder="Meses promedio para obtención de permiso de construcción" value={meses} onChange={e => setMeses(e.target.value)}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: T.radiusSm, border: `1px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }}
+                  />
+                </div>
               </div>
               <textarea
                 placeholder="Comentario anónimo sobre tu experiencia en este municipio (opcional)..."
@@ -633,7 +636,7 @@ export default function App() {
       {vista === "mapa" && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           {/* Stats */}
-          <div style={{ background: T.bg, borderBottom: `1px solid ${T.border}`, padding: "14px 32px", display: "flex", gap: 40, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ background: T.bg, borderBottom: `1px solid ${T.border}`, padding: "14px 32px", display: "flex", gap: 40, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
             {cargando
               ? [1,2,3,4].map(i => <Skeleton key={i} w={120} h={34} />)
               : [
@@ -664,7 +667,7 @@ export default function App() {
               )}
             </div>
             </div>
-            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+            <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "center" }}>
               {[[T.green, "≥ 4.0 Favorable"], [T.yellow, "3–3.9 Moderado"], [T.red, "< 3.0 Difícil"]].map(([c, l]) => (
                 <div key={l} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <div style={{ width: 10, height: 10, borderRadius: "50%", background: c }} />
@@ -734,19 +737,21 @@ export default function App() {
 
           {/* ── Opiniones de la comunidad ───────────────────── */}
           <div style={{ marginTop: 56 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
-              <div>
-                <p style={{ margin: "0 0 4px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Comunidad</p>
-                <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>Opiniones anónimas</h2>
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ textAlign: "center", marginBottom: 12 }}>
+                <p style={{ margin: "0 0 4px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", textAlign: "center" }}>Comunidad</p>
+                <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: T.text, letterSpacing: -0.5, textAlign: "center" }}>Opiniones anónimas</h2>
               </div>
-              <select
-                value={filtroComMunicipio}
-                onChange={e => setFiltroComMunicipio(e.target.value)}
-                style={{ padding: "9px 14px", borderRadius: T.radius, border: `1.5px solid ${T.border}`, background: T.bg, color: filtroComMunicipio ? T.text : T.textLight, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}
-              >
-                <option value="">Todos los municipios</option>
-                {municipios.map(m => <option key={m.id} value={m.nombre}>{m.nombre}</option>)}
-              </select>
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <select
+                  value={filtroComMunicipio}
+                  onChange={e => setFiltroComMunicipio(e.target.value)}
+                  style={{ padding: "9px 14px", borderRadius: T.radius, border: `1.5px solid ${T.border}`, background: T.bg, color: filtroComMunicipio ? T.text : T.textLight, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}
+                >
+                  <option value="">Todos los municipios</option>
+                  {municipios.map(m => <option key={m.id} value={m.nombre}>{m.nombre}</option>)}
+                </select>
+              </div>
             </div>
 
             {cargandoComments
