@@ -99,7 +99,7 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
     const datos = municipiosRef.current?.find(m => normalizar(m.nombre) === normalizar(nombre));
     setSeleccionado({
       nombre,
-      puntaje:     datos?.puntaje_promedio || 0,
+      puntaje:     datos?.puntaje_global || 0,
       evaluaciones: datos?.total_evaluaciones || 0,
     });
     if (onSeleccionar && datos) onSeleccionar(datos);
@@ -110,7 +110,7 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
     const nombre = feature.properties.departamento;
     const datos  = municipios?.find(m => normalizar(m.nombre) === normalizar(nombre));
     return {
-      fillColor:   obtenerColor(datos?.puntaje_promedio || 0),
+      fillColor:   obtenerColor(datos?.puntaje_global || 0),
       fillOpacity: 0.65,
       color:       '#FFFFFF',
       weight:      2,
@@ -121,7 +121,7 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
   function onCadaPoligono(feature, layer) {
     const nombre     = feature.properties.departamento;
     const datos      = municipiosRef.current?.find(m => normalizar(m.nombre) === normalizar(nombre));
-    const puntajeRaw = datos?.puntaje_promedio;
+    const puntajeRaw = datos?.puntaje_global;
     const puntaje    = puntajeRaw?.toFixed(1) || null;
     const color      = obtenerColorBadge(puntajeRaw);
     const barWidth   = puntajeRaw ? Math.round((puntajeRaw / 5) * 100) : 0;
@@ -162,10 +162,10 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
         const datosClick = municipiosRef.current?.find(m => normalizar(m.nombre) === normalizar(nombre));
         setSeleccionado({
           nombre,
-          puntaje:      datosClick?.puntaje_promedio || 0,
+          puntaje:      datosClick?.puntaje_global || 0,
           evaluaciones: datosClick?.total_evaluaciones || 0,
         });
-        if (onSeleccionar && datosClick) onSeleccionar(datosClick);
+        if (onSeleccionar) onSeleccionar(datosClick || { nombre, id: null, puntaje_global: 0, total_votos: 0, region: '' });
       },
     });
   }
@@ -253,7 +253,7 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
         />
         {geojsonData && (
           <GeoJSON
-            key={(municipios?.reduce((acc, m) => acc + (m.puntaje_promedio || 0), 0) ?? 0).toFixed(4)}
+            key={(municipios?.reduce((acc, m) => acc + (m.puntaje_global || 0), 0) ?? 0).toFixed(4)}
             data={geojsonData}
             style={estilo}
             onEachFeature={onCadaPoligono}
