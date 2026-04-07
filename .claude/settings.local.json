@@ -5,7 +5,8 @@
       "Bash(find \"C:/Users/ZN - GF/Desktop/muniscore/public\" -type f -exec ls -lh {} \\\\;)",
       "Bash(file:*)",
       "Bash(npm run:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "WebFetch(domain:munilupa.vercel.app)"
     ]
   }
 }
