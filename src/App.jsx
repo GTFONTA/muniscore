@@ -203,7 +203,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
   };
 
   const Stars = ({ campo, val }) => (
-    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+    <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 10 }}>
       {[1, 2, 3, 4, 5].map(n => (
         <button key={n} onClick={() => setPts(p => ({ ...p, [campo]: n }))} style={{
           width: 42, height: 42, borderRadius: T.radiusSm, cursor: "pointer",
@@ -288,10 +288,10 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
                   {["Casa unifamiliar", "Edificio", "Industrial", "Comercial", "Otro"].map(o => <option key={o}>{o}</option>)}
                 </select>
                 <div>
-                  <p style={{ margin: "0 0 6px", fontSize: 11, color: T.textLight }}>Meses promedio para obtención de permiso de construcción</p>
                   <input type="number" placeholder="Meses promedio para obtención de permiso de construcción" value={meses} onChange={e => setMeses(e.target.value)}
                     style={{ width: "100%", padding: "10px 14px", borderRadius: T.radiusSm, border: `1px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }}
                   />
+                  <style>{`input[type="number"]::placeholder { font-size: 0.75rem; }`}</style>
                 </div>
               </div>
               <textarea
