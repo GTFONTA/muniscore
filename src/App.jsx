@@ -330,7 +330,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
 // ─────────────────────────────────────────────
 //  PANEL LATERAL DEL MUNICIPIO
 // ─────────────────────────────────────────────
-const PanelMunicipio = ({ mun, usuario, onClose }) => {
+const PanelMunicipio = ({ mun, usuario, onClose, onVotado }) => {
   const [tab, setTab]               = useState("datos");
   const [showSurvey, setShowSurvey] = useState(false);
   const [comentarios, setComentarios] = useState([]);
@@ -452,7 +452,7 @@ const PanelMunicipio = ({ mun, usuario, onClose }) => {
         </BtnPrimary>
       </div>
 
-      {showSurvey && <ModalEncuesta mun={mun} usuario={usuario} onClose={() => setShowSurvey(false)} onVotado={() => setShowSurvey(false)} />}
+      {showSurvey && <ModalEncuesta mun={mun} usuario={usuario} onClose={() => setShowSurvey(false)} onVotado={() => { setShowSurvey(false); if (onVotado) onVotado(); }} />}
     </div>
   );
 };
@@ -662,6 +662,14 @@ export default function App() {
                     mun={activo}
                     usuario={usuario}
                     onClose={() => setActivo(null)}
+                    onVotado={async () => {
+                      const { data } = await getMunicipios();
+                      if (data) {
+                        setMunicipios(data);
+                        const updated = data.find(m => m.id === activo.id);
+                        if (updated) setActivo(updated);
+                      }
+                    }}
                   />
                 </div>
               )}

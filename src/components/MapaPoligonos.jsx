@@ -253,7 +253,7 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
         />
         {geojsonData && (
           <GeoJSON
-            key={municipios?.length ?? 0}
+            key={(municipios?.reduce((acc, m) => acc + (m.puntaje_promedio || 0), 0) ?? 0).toFixed(4)}
             data={geojsonData}
             style={estilo}
             onEachFeature={onCadaPoligono}
