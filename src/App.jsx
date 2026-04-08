@@ -15,6 +15,7 @@ import {
   getDocumentos,
   getArticulos,
   enviarVoto,
+  actualizarVoto,
   loginConEmail,
   getUsuarioActual,
   cerrarSesion,
@@ -164,6 +165,30 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
   const [linkEnviado, setLinkEnviado] = useState(false);
+  const [votoExistenteInfo, setVotoExistenteInfo] = useState(null);
+  const [cargandoVotoExistente, setCargandoVotoExistente] = useState(!!usuario);
+
+  useEffect(() => {
+    if (!usuario) return;
+    (async () => {
+      const resultado = await yaVoto(mun.id);
+      if (resultado.existe) {
+        setPts({
+          transparencia:  resultado.votoActual.transparencia,
+          velocidad:      resultado.votoActual.velocidad,
+          normativa:      resultado.votoActual.normativa,
+          impuestos:      resultado.votoActual.impuestos,
+          atencion:       resultado.votoActual.atencion,
+          previsibilidad: resultado.votoActual.previsibilidad,
+        });
+        setMeses(String(resultado.votoActual.meses || ""));
+        setTipo(resultado.votoActual.tipo || "");
+        setComentario(resultado.votoActual.comentario || "");
+        setVotoExistenteInfo({ votoId: resultado.votoId });
+      }
+      setCargandoVotoExistente(false);
+    })();
+  }, [mun.id, usuario]);
 
   const prog  = Object.values(pts).filter(v => v > 0).length;
   const listo = prog === 6;
@@ -180,10 +205,8 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
   const handleEnviar = async () => {
     if (!listo) return;
     setCargando(true); setError(null);
-    const votoExistente = await yaVoto(mun.id);
-    if (votoExistente) { setError("Ya calificaste este municipio anteriormente."); setCargando(false); return; }
 
-    const { error } = await enviarVoto({
+    const payload = {
       municipioId:            mun.id,
       puntajeTransparencia:   pts.transparencia,
       puntajeVelocidad:       pts.velocidad,
@@ -194,7 +217,11 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
       mesesAprobacion:        meses ? parseInt(meses) : null,
       tipoProyecto:           tipo || null,
       comentario:             comentario.trim() || null,
-    });
+    };
+
+    const { error } = votoExistenteInfo
+      ? await actualizarVoto({ votoId: votoExistenteInfo.votoId, ...payload })
+      : await enviarVoto(payload);
 
     setCargando(false);
     if (error) { setError("No se pudo registrar el voto. Intentá de nuevo."); return; }
@@ -274,6 +301,11 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
 
           {/* PASO 1: Encuesta */}
           {paso === 1 && <>
+            {votoExistenteInfo && (
+              <div style={{ padding: "10px 14px", borderRadius: T.radiusSm, background: T.blueSoft, border: `1px solid ${T.blueMid}`, color: T.blue, fontSize: 13, marginBottom: 16 }}>
+                Estás actualizando tu calificación anterior. Los nuevos puntajes reemplazarán los anteriores.
+              </div>
+            )}
             {PREGUNTAS.map(p => (
               <div key={p.key} style={{ marginBottom: 22 }}>
                 <p style={{ margin: 0, fontSize: 14, color: T.text, fontWeight: 600 }}>{p.emoji} {p.label}</p>
@@ -306,7 +338,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
                 <p style={{ margin: "4px 0 0", fontSize: 11, color: T.textLight, textAlign: "right" }}>{comentario.length}/600</p>
               )}
             </div>
-            <BtnPrimary full onClick={handleEnviar} disabled={!listo || cargando}>
+            <BtnPrimary full onClick={handleEnviar} disabled={!listo || cargando || cargandoVotoExistente}>
               {cargando ? "Enviando..." : listo ? "Enviar mi calificación →" : `Completá todas las categorías (${prog}/6)`}
             </BtnPrimary>
           </>}
@@ -316,7 +348,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
             <div style={{ textAlign: "center", padding: "10px 0 8px" }}>
               <div style={{ width: 72, height: 72, borderRadius: "50%", background: T.greenSoft, border: `2px solid ${T.greenMid}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 20px" }}>✓</div>
               <p style={{ fontSize: 15, color: T.textMid, lineHeight: 1.7, margin: "0 0 28px" }}>
-                Tu calificación de <strong style={{ color: T.text }}>{mun.nombre}</strong> fue registrada. El índice se actualizará en los próximos minutos.
+                Tu calificación de <strong style={{ color: T.text }}>{mun.nombre}</strong> fue {votoExistenteInfo ? "actualizada" : "registrada"}. El índice se actualizará en los próximos minutos.
               </p>
               <BtnPrimary onClick={onClose}>Volver al mapa</BtnPrimary>
             </div>

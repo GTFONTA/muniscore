@@ -67,16 +67,31 @@ export async function getEncuestasMunicipio(municipioId) {
 // ── Verifica si el usuario ya votó en este municipio ────────
 export async function yaVoto(municipioId) {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return false;
+  if (!user) return { existe: false, votoId: null, votoActual: null };
 
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from('encuestas')
-    .select('id')
+    .select('id, puntaje_transparencia, puntaje_velocidad, puntaje_normativa, puntaje_impuestos, puntaje_atencion, puntaje_previsibilidad, meses_aprobacion, tipo_proyecto, comentario')
     .eq('municipio_id', municipioId)
     .eq('usuario_id', user.id)
     .maybeSingle();
 
-  return !!data;  // true si encontró un voto previo
+  if (!data) return { existe: false, votoId: null, votoActual: null };
+  return {
+    existe: true,
+    votoId: data.id,
+    votoActual: {
+      transparencia:  data.puntaje_transparencia,
+      velocidad:      data.puntaje_velocidad,
+      normativa:      data.puntaje_normativa,
+      impuestos:      data.puntaje_impuestos,
+      atencion:       data.puntaje_atencion,
+      previsibilidad: data.puntaje_previsibilidad,
+      meses:          data.meses_aprobacion ?? "",
+      tipo:           data.tipo_proyecto ?? "",
+      comentario:     data.comentario ?? "",
+    }
+  };
 }
 
 // ── Envía el voto del usuario ───────────────────────────────
@@ -116,6 +131,30 @@ export async function enviarVoto({
     });
 
   if (error) console.error('Error al enviar voto:', error.message);
+  return { data, error };
+}
+
+// ── Actualiza un voto existente del usuario ─────────────────
+export async function actualizarVoto({ votoId, puntajeTransparencia, puntajeVelocidad, puntajeNormativa, puntajeImpuestos, puntajeAtencion, puntajePrevisibilidad, mesesAprobacion, tipoProyecto, comentario }) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Debés iniciar sesión para votar.' };
+
+  const { data, error } = await supabase
+    .from('encuestas')
+    .update({
+      puntaje_transparencia:  puntajeTransparencia,
+      puntaje_velocidad:      puntajeVelocidad,
+      puntaje_normativa:      puntajeNormativa,
+      puntaje_impuestos:      puntajeImpuestos,
+      puntaje_atencion:       puntajeAtencion,
+      puntaje_previsibilidad: puntajePrevisibilidad,
+      meses_aprobacion:       mesesAprobacion || null,
+      tipo_proyecto:          tipoProyecto || null,
+      comentario:             comentario || null,
+    })
+    .eq('id', votoId);
+
+  if (error) console.error('Error al actualizar voto:', error.message);
   return { data, error };
 }
 
