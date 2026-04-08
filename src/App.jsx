@@ -806,8 +806,8 @@ export default function App() {
       {/* VISTA: MAPA */}
       {vista === "mapa" && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          <p style={{ textAlign: "center", fontSize: "1.5rem", fontWeight: 700, color: T.text, margin: "20px 32px 12px", lineHeight: 1.3, padding: "0 16px" }}>
-            El primer mapa que muestra en qué municipios de Argentina es más fácil (o imposible) construir
+          <p style={{ textAlign: "center", fontSize: "1.35rem", fontWeight: 700, color: T.text, margin: "20px 32px 12px", lineHeight: 1.3, padding: "0 16px" }}>
+            El primer mapa que muestra en qué municipios de Argentina es más <span style={{ color: T.green }}>fácil</span> (o <span style={{ color: T.red }}>imposible</span>) construir
           </p>
           {/* Stats */}
           <div style={{ background: T.bg, borderBottom: `1px solid ${T.border}`, padding: "14px 32px", display: "flex", gap: 40, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
