@@ -362,7 +362,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
 // ─────────────────────────────────────────────
 //  PANEL LATERAL DEL MUNICIPIO
 // ─────────────────────────────────────────────
-const PanelMunicipio = ({ mun, usuario, onClose }) => {
+const PanelMunicipio = ({ mun, usuario, onClose, onVotado }) => {
   const [tab, setTab]               = useState("datos");
   const [showSurvey, setShowSurvey] = useState(false);
   const [comentarios, setComentarios] = useState([]);
@@ -388,6 +388,27 @@ const PanelMunicipio = ({ mun, usuario, onClose }) => {
       });
     }
   }, [tab]);
+
+  if (!mun.id) {
+    return (
+      <div style={{ position: "absolute", top: 0, right: 0, width: 380, height: "100%", background: T.bg, borderLeft: `1px solid ${T.border}`, display: "flex", flexDirection: "column", zIndex: 20, boxShadow: "-12px 0 48px rgba(0,0,0,0.09)", animation: "slideIn 0.22s ease" }}>
+        <div style={{ padding: "26px 26px 20px", borderBottom: `1px solid ${T.border}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>{mun.nombre}</h2>
+            <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: "50%", border: `1.5px solid ${T.border}`, background: T.bg, color: T.textLight, cursor: "pointer", fontSize: 14 }}>✕</button>
+          </div>
+        </div>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 32, textAlign: "center" }}>
+          <div>
+            <div style={{ fontSize: 40, marginBottom: 16 }}>🏗</div>
+            <p style={{ fontSize: 15, color: T.textMid, lineHeight: 1.7, margin: 0 }}>
+              Este municipio aún no está disponible en la plataforma.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ position: "absolute", top: 0, right: 0, width: 380, height: "100%", background: T.bg, borderLeft: `1px solid ${T.border}`, display: "flex", flexDirection: "column", zIndex: 20, boxShadow: "-12px 0 48px rgba(0,0,0,0.09)", animation: "slideIn 0.22s ease" }}>
@@ -484,7 +505,7 @@ const PanelMunicipio = ({ mun, usuario, onClose }) => {
         </BtnPrimary>
       </div>
 
-      {showSurvey && <ModalEncuesta mun={mun} usuario={usuario} onClose={() => setShowSurvey(false)} onVotado={() => setShowSurvey(false)} />}
+      {showSurvey && <ModalEncuesta mun={mun} usuario={usuario} onClose={() => setShowSurvey(false)} onVotado={() => { setShowSurvey(false); if (onVotado) onVotado(); }} />}
     </div>
   );
 };
@@ -694,6 +715,14 @@ export default function App() {
                     mun={activo}
                     usuario={usuario}
                     onClose={() => setActivo(null)}
+                    onVotado={async () => {
+                      const { data } = await getMunicipios();
+                      if (data) {
+                        setMunicipios(data);
+                        const updated = data.find(m => m.id === activo.id);
+                        if (updated) setActivo(updated);
+                      }
+                    }}
                   />
                 </div>
               )}
