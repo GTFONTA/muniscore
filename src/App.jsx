@@ -254,11 +254,13 @@ const VistaRanking = ({ municipios, onRefresh }) => {
 
   return (
     <div style={{ flex: 1, width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease" }}>
-      <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Índice AMBA</p>
-      <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>
-        Ranking de <span style={{ color: T.orange }}>municipios</span>
-      </h1>
-      <p style={{ fontSize: 15, color: T.textMid, margin: "0 0 28px" }}>Compará el desempeño de cada municipio según la categoría que más te interesa.</p>
+      <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
+        <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Índice AMBA</p>
+        <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>
+          Ranking de <span style={{ color: T.orange }}>municipios</span>
+        </h1>
+        <p style={{ fontSize: 15, color: T.textMid, margin: "0 0 28px" }}>Compará el desempeño de cada municipio según la categoría que más te interesa.</p>
+      </div>
 
       <div style={{ marginBottom: 28 }}>
         <select
@@ -898,7 +900,7 @@ export default function App() {
               👆 Hacé clic en tu municipio para ver su estadística y puntuarlo
             </div>
           </div>
-          <div style={{ width: '100%', padding: '0 16px', position: 'relative' }}>
+          <div style={{ width: '100%', position: 'relative' }}>
             <MapaPoligonos
               municipios={municipios}
               onSeleccionar={(mun) => setActivo(mun)}
@@ -940,9 +942,11 @@ export default function App() {
       {/* VISTA: NOTICIAS */}
       {vista === "noticias" && (
         <div style={{ flex: 1, width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease" }}>
-          <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Blog & Noticias</p>
-          <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>Para <span style={{ color: T.orange }}>desarrolladores</span> e inversores</h1>
-          <p style={{ fontSize: 15, color: T.textMid, margin: "0 0 40px" }}>Normativa, análisis y novedades del sector en el AMBA.</p>
+          <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
+            <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Blog & Noticias</p>
+            <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>Para <span style={{ color: T.orange }}>desarrolladores</span> e inversores</h1>
+            <p style={{ fontSize: 15, color: T.textMid, margin: "0 0 40px" }}>Normativa, análisis y novedades del sector en el AMBA.</p>
+          </div>
 
           {cargando
             ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(290px,1fr))", gap: 22 }}>
@@ -1045,10 +1049,12 @@ export default function App() {
       {/* VISTA: METODOLOGÍA */}
       {vista === "metodologia" && (
         <div style={{ flex: 1, width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease" }}>
-          <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Transparencia</p>
-          <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>Metodología & <span style={{ color: T.orange }}>Privacidad</span></h1>
-          <p style={{ fontSize: 15, color: T.textMid, marginBottom: 36, lineHeight: 1.7 }}>Munilupa es una herramienta de inteligencia colectiva. Los índices reflejan la experiencia de los usuarios, no la posición de ninguna organización ni partido político.</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
+            <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Transparencia</p>
+            <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>Metodología & <span style={{ color: T.orange }}>Privacidad</span></h1>
+            <p style={{ fontSize: 15, color: T.textMid, marginBottom: 36, lineHeight: 1.7 }}>Munilupa es una herramienta de inteligencia colectiva. Los índices reflejan la experiencia de los usuarios, no la posición de ninguna organización ni partido político.</p>
+          </div>
+          <div style={{ maxWidth: 860, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
             {[
               { icon: "⚖️", titulo: "¿Cómo se calcula el índice?", texto: `Transparencia (25%) · Velocidad de aprobación (20%) · Claridad normativa (20%) · Previsibilidad (15%) · Atención al público (10%) · Carga impositiva (10%). El promedio ponderado de todas las encuestas válidas genera el índice de cada municipio.` },
               { icon: "🙋", titulo: "¿Quién puede participar?", texto: "Desarrolladores, constructores, arquitectos, ingenieros y vecinos que construyeron su vivienda. Recomendamos calificar solo municipios donde hayas trabajado, aunque no hay restricción formal." },
@@ -1063,13 +1069,13 @@ export default function App() {
                 </div>
               </div>
             ))}
-          </div>
-          {/* Sponsor */}
-          <div style={{ marginTop: 32, padding: "22px 26px", borderRadius: T.radiusXl, background: `linear-gradient(135deg, ${T.orangeSoft}, #FFF)`, border: `1.5px solid ${T.orangeMid}`, display: "flex", alignItems: "center", gap: 18 }}>
-            <div style={{ width: 52, height: 52, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, boxShadow: T.shadowCard }}>🤝</div>
-            <div style={{ flex: 1, textAlign: "center" }}>
-              <p style={{ margin: "0 0 3px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>Patrocinios</p>
-              <p style={{ margin: 0, fontSize: 14, color: T.textMid }}>¿Tu empresa quiere llegar a desarrolladores del AMBA? <span style={{ color: T.orange, fontWeight: 700, cursor: "pointer" }} onClick={() => setVista("contacto")}>Hablemos →</span></p>
+            {/* Sponsor */}
+            <div style={{ marginTop: 18, padding: "22px 26px", borderRadius: T.radiusXl, background: `linear-gradient(135deg, ${T.orangeSoft}, #FFF)`, border: `1.5px solid ${T.orangeMid}`, display: "flex", alignItems: "center", gap: 18 }}>
+              <div style={{ width: 52, height: 52, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, boxShadow: T.shadowCard }}>🤝</div>
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <p style={{ margin: "0 0 3px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>Patrocinios</p>
+                <p style={{ margin: 0, fontSize: 14, color: T.textMid }}>¿Tu empresa quiere llegar a desarrolladores del AMBA? <span style={{ color: T.orange, fontWeight: 700, cursor: "pointer" }} onClick={() => setVista("contacto")}>Hablemos →</span></p>
+              </div>
             </div>
           </div>
         </div>

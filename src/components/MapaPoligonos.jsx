@@ -245,7 +245,7 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
       <MapContainer
         center={[-34.62, -58.44]}
         zoom={9}
-        style={{ height: '560px', width: '100%', borderRadius: '12px' }}
+        style={{ height: '65vh', minHeight: '500px', width: '100%', borderRadius: 0 }}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
