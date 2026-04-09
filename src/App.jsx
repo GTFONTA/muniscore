@@ -602,6 +602,33 @@ export default function App() {
         .nav-links, .nav-cta { display:none !important; }
         .nav-hamburger { display:block !important; }
       }
+      .hero-bar {
+        width: 100%;
+        padding: 0.75rem 2rem;
+        border-radius: 0;
+        background: #FFFAF7;
+        border-bottom: 1px solid ${T.orangeMid};
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+      .hero-left {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+      @media (max-width:768px) {
+        .hero-bar {
+          flex-direction: column;
+          align-items: flex-start;
+          padding: 1rem;
+        }
+        .hero-bar h1 {
+          font-size: 1.1rem !important;
+        }
+      }
     `;
     document.head.appendChild(s);
   }, []);
@@ -689,24 +716,27 @@ export default function App() {
       {vista === "mapa" && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           {/* HERO */}
-          <div style={{ maxWidth: 700, margin: "20px auto 0", padding: "2.5rem", borderRadius: T.radius, background: "#FFFAF7", border: `1px solid ${T.orangeMid}`, textAlign: "center" }}>
-            <p style={{ margin: "0 0 1rem", fontSize: "0.75rem", color: T.orange, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600 }}>
-              NUEVO · ÍNDICE MUNICIPAL DE CONSTRUCCIÓN
-            </p>
-            <h1 style={{ margin: 0, fontSize: "2.6rem", fontWeight: 800, color: T.text, lineHeight: 1.25 }}>
-              El primer mapa que revela en qué{" "}
-              <span style={{ fontWeight: 800, fontStyle: "italic", color: T.orange }}>municipios</span>{" "}
-              es más{" "}
-              <span style={{ fontWeight: 800, color: "#2E7D32" }}>fácil</span>{" "}
-              o{" "}
-              <span style={{ fontWeight: 800, color: T.red }}>difícil</span>{" "}
-              construir
-            </h1>
-            <div style={{ width: 60, height: 3, background: T.orange, margin: "1rem auto" }} />
-            <p style={{ margin: "0 0 1.25rem", fontSize: "1rem", color: "#555" }}>
-              Transparencia, tiempos y burocracia municipio por municipio.
-            </p>
-            <div style={{ display: "inline-block", padding: "10px 24px", borderRadius: 999, background: "#F5F5F5", border: "1px solid #E0E0E0", color: "#333", fontSize: "0.9rem" }}>
+          <div className="hero-bar">
+            {/* Bloque izquierdo: textos */}
+            <div className="hero-left">
+              <p style={{ margin: 0, fontSize: "0.65rem", color: T.orange, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600 }}>
+                NUEVO · ÍNDICE MUNICIPAL DE CONSTRUCCIÓN
+              </p>
+              <h1 style={{ margin: 0, fontSize: "1.4rem", fontWeight: 800, color: T.text, lineHeight: 1.2 }}>
+                El primer mapa que revela en qué{" "}
+                <span style={{ fontWeight: 800, fontStyle: "italic", color: T.orange }}>municipios</span>{" "}
+                es más{" "}
+                <span style={{ fontWeight: 800, color: "#2E7D32" }}>fácil</span>{" "}
+                o{" "}
+                <span style={{ fontWeight: 800, color: T.red }}>difícil</span>{" "}
+                construir
+              </h1>
+              <p style={{ margin: 0, fontSize: "0.8rem", color: "#555" }}>
+                Transparencia, tiempos y burocracia municipio por municipio.
+              </p>
+            </div>
+            {/* Bloque derecho: CTA */}
+            <div style={{ flexShrink: 0, padding: "0.5rem 1.2rem", borderRadius: 999, background: "#F5F5F5", border: "1px solid #E0E0E0", color: "#333", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
               👆 Hacé clic en tu municipio para ver su estadística y puntuarlo
             </div>
           </div>
