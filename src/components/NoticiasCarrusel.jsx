@@ -114,6 +114,14 @@ export default function NoticiasCarrusel() {
         @media (max-width: 767px) {
           .nc-tarjeta { width: 100%; }
         }
+        @media (min-width: 1280px) {
+          .nc-section-badge  { font-size: 22px !important; }
+          .nc-section-title  { font-size: 44px !important; }
+          .nc-section-sub    { font-size: 28px !important; }
+          .nc-card-title     { font-size: 28px !important; line-height: 1.4 !important; }
+          .nc-card-body      { font-size: 24px !important; }
+          .nc-card-source    { font-size: 22px !important; padding-top: 14px !important; }
+        }
         .nc-titulo-enlace:hover {
           color: ${T.orange} !important;
           text-decoration: underline;
@@ -135,13 +143,13 @@ export default function NoticiasCarrusel() {
       >
         {/* Encabezado */}
         <div style={{ padding: '0 24px 28px' }}>
-          <p style={{ margin: '0 0 4px', fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>
+          <p className="nc-section-badge" style={{ margin: '0 0 4px', fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>
             Sector en perspectiva
           </p>
-          <h2 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800, color: T.text, letterSpacing: -0.4 }}>
+          <h2 className="nc-section-title" style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800, color: T.text, letterSpacing: -0.4 }}>
             Noticias del sector
           </h2>
-          <p style={{ margin: 0, fontSize: 14, color: T.textMid }}>
+          <p className="nc-section-sub" style={{ margin: 0, fontSize: 14, color: T.textMid }}>
             Artículos de medios externos sobre urbanismo, normativa y mercado inmobiliario.
           </p>
         </div>
@@ -217,7 +225,7 @@ export default function NoticiasCarrusel() {
                     href={art.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="nc-titulo-enlace"
+                    className="nc-titulo-enlace nc-card-title"
                     style={{
                       fontSize: 14,
                       fontWeight: 700,
@@ -231,12 +239,12 @@ export default function NoticiasCarrusel() {
                   </a>
 
                   {/* Copete de redacción propia (máximo 2 oraciones) */}
-                  <p style={{ margin: 0, fontSize: 12, color: T.textMid, lineHeight: 1.65, flex: 1 }}>
+                  <p className="nc-card-body" style={{ margin: 0, fontSize: 12, color: T.textMid, lineHeight: 1.65, flex: 1 }}>
                     {art.copete}
                   </p>
 
                   {/* Crédito de fuente */}
-                  <p style={{
+                  <p className="nc-card-source" style={{
                     margin: 0,
                     fontSize: 11,
                     color: T.textLight,

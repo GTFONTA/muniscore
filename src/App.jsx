@@ -243,30 +243,30 @@ const VistaRanking = ({ municipios, onRefresh }) => {
 
   const TablaRanking = ({ titulo, filas, esMejores }) => (
     <div style={{ flex: 1, background: T.bg, borderRadius: T.radiusXl, border: `1px solid ${T.border}`, padding: "28px 28px 18px", boxShadow: T.shadowCard }}>
-      <h3 style={{ margin: "0 0 18px", fontSize: 20, fontWeight: 800, color: T.text }}>{titulo}</h3>
+      <h3 className="rank-card-title" style={{ margin: "0 0 18px", fontSize: 20, fontWeight: 800, color: T.text }}>{titulo}</h3>
       {filas.length === 0
-        ? <p style={{ fontSize: 13, color: T.textLight, textAlign: "center", padding: "24px 0" }}>Sin datos suficientes aún</p>
+        ? <p className="rank-empty" style={{ fontSize: 13, color: T.textLight, textAlign: "center", padding: "24px 0" }}>Sin datos suficientes aún</p>
         : filas.map((f, i) => <FilaRanking key={i} pos={i + 1} nombre={f.nombre} valor={f.valor} votos={f.votos} esMejores={esMejores} />)
       }
-      <p style={{ margin: "12px 0 0", fontSize: 11, color: T.textLight, fontStyle: "italic" }}>Solo se muestran municipios con 3 o más evaluaciones</p>
+      <p className="rank-foot-note" style={{ margin: "12px 0 0", fontSize: 11, color: T.textLight, fontStyle: "italic" }}>Solo se muestran municipios con 3 o más evaluaciones</p>
     </div>
   );
 
   return (
     <div style={{ flex: 1, width: "100%", padding: "52px 48px", animation: "fadeUp 0.25s ease" }}>
       <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
-        <p style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Índice AMBA</p>
-        <h1 style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>
+        <p className="rank-badge" style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Índice AMBA</p>
+        <h1 className="rank-h1" style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>
           Ranking de <span style={{ color: T.orange }}>municipios</span>
         </h1>
-        <p style={{ fontSize: 17, color: T.textMid, margin: "0 0 28px" }}>Compará el desempeño de cada municipio según la categoría que más te interesa.</p>
+        <p className="rank-sub" style={{ fontSize: 17, color: T.textMid, margin: "0 0 28px" }}>Compará el desempeño de cada municipio según la categoría que más te interesa.</p>
       </div>
 
       <div style={{ marginBottom: 28 }}>
         <select
           value={categoria}
           onChange={e => setCategoria(e.target.value)}
-          style={{ padding: "12px 18px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 15, fontFamily: "inherit", cursor: "pointer", outline: "none", minWidth: 300 }}
+          className="rank-select" style={{ padding: "12px 18px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 15, fontFamily: "inherit", cursor: "pointer", outline: "none", minWidth: 300 }}
         >
           {CATEGORIAS_RANKING.map(c => (
             <option key={c.key} value={c.key}>{c.label}</option>
@@ -279,7 +279,7 @@ const VistaRanking = ({ municipios, onRefresh }) => {
         <TablaRanking titulo="⚠️ Peores 10 — Mayor dificultad" filas={peor10} esMejores={false} />
       </div>
 
-      <p style={{ marginTop: 16, fontSize: 11, color: T.textLight, textAlign: "right" }}>
+      <p className="rank-last-update" style={{ marginTop: 16, fontSize: 11, color: T.textLight, textAlign: "right" }}>
         Última actualización: {ultimaAct.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
       </p>
     </div>
@@ -770,6 +770,74 @@ export default function App() {
           font-size: 1.1rem !important;
         }
       }
+
+      @media (min-width:1280px) {
+        /* NAVBAR */
+        nav { height: 128px !important; }
+        .nav-logo-img { height: 96px !important; }
+        .nav-logo-text { font-size: 42px !important; }
+        .nav-logo-sub { font-size: 20px !important; }
+        .nav-link-btn { font-size: 30px !important; padding: 44px 20px !important; }
+        .nav-user-email { font-size: 26px !important; }
+        .nav-user-logout { font-size: 26px !important; padding: 10px 24px !important; }
+
+        /* HERO */
+        .hero-badge { font-size: 24px !important; }
+        .hero-sub   { font-size: 34px !important; }
+
+        /* STATS */
+        .stat-label { font-size: 24px !important; text-align: center; }
+        .stat-value { font-size: 48px !important; text-align: center; }
+
+        /* CTA BAR */
+        .cta-pill { font-size: 26px !important; padding: 1.2rem 2.8rem !important; }
+
+        /* MAP LEGEND */
+        .legend-text { font-size: 24px !important; }
+        .legend-dot  { width: 20px !important; height: 20px !important; }
+
+        /* RANKING */
+        .rank-badge       { font-size: 24px !important; }
+        .rank-h1          { font-size: 84px !important; letter-spacing: -2px !important; }
+        .rank-sub         { font-size: 34px !important; }
+        .rank-select      { font-size: 30px !important; padding: 24px 36px !important; min-width: 420px !important; }
+        .rank-card-title  { font-size: 40px !important; margin-bottom: 24px !important; }
+        .rank-empty       { font-size: 26px !important; }
+        .rank-foot-note   { font-size: 22px !important; }
+        .rank-last-update { font-size: 22px !important; }
+
+        /* NOTICIAS */
+        .noticias-badge   { font-size: 24px !important; }
+        .noticias-h1      { font-size: 84px !important; letter-spacing: -2px !important; }
+        .noticias-sub     { font-size: 34px !important; }
+        .community-badge  { font-size: 22px !important; }
+        .community-title  { font-size: 48px !important; }
+        .community-select { font-size: 26px !important; padding: 18px 28px !important; }
+
+        /* METODOLOGÍA */
+        .metodo-badge  { font-size: 24px !important; }
+        .metodo-h1     { font-size: 84px !important; letter-spacing: -2px !important; }
+        .metodo-sub    { font-size: 34px !important; }
+        .faq-container { max-width: 100% !important; }
+        .faq-title     { font-size: 38px !important; }
+        .faq-body      { font-size: 30px !important; }
+        .sponsor-text  { font-size: 30px !important; }
+
+        /* CONTACTO */
+        .contact-badge     { font-size: 24px !important; }
+        .contact-h1        { font-size: 84px !important; letter-spacing: -2px !important; }
+        .contact-sub       { font-size: 34px !important; }
+        .contact-form-wrap { max-width: 860px !important; }
+        .contact-label     { font-size: 26px !important; margin-bottom: 10px !important; }
+        .contact-input     { padding: 42px 54px !important; font-size: 32px !important; }
+        .contact-select    { padding: 42px 54px !important; font-size: 32px !important; }
+        .contact-textarea  { padding: 42px 54px !important; font-size: 32px !important; min-height: 420px !important; }
+        .contact-submit-wrap button { padding: 48px 96px !important; font-size: 32px !important; }
+
+        /* FOOTER */
+        footer { font-size: 26px !important; padding: 40px 64px !important; }
+        .footer-logo { font-size: 30px !important; }
+      }
     `;
     document.head.appendChild(s);
   }, []);
@@ -788,16 +856,16 @@ export default function App() {
       {/* NAVBAR */}
       <nav style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", borderBottom: `1px solid ${T.border}`, padding: "0 48px", display: "flex", alignItems: "center", height: 64, gap: 32, position: "sticky", top: 0, zIndex: 1000, boxShadow: `0 1px 0 ${T.border}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/logo-icono.png" alt="MuniLupa ícono" style={{ height: "48px", width: "auto", objectFit: "contain" }} />
+          <img src="/logo-icono.png" alt="MuniLupa ícono" className="nav-logo-img" style={{ height: "48px", width: "auto", objectFit: "contain" }} />
           <div>
-            <div style={{ fontSize: 21, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>Muni<span style={{ color: T.orange }}>lupa</span></div>
-            <div style={{ fontSize: 10, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>Gestión Municipal a la vista</div>
+            <div className="nav-logo-text" style={{ fontSize: 21, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>Muni<span style={{ color: T.orange }}>lupa</span></div>
+            <div className="nav-logo-sub" style={{ fontSize: 10, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>Gestión Municipal a la vista</div>
           </div>
         </div>
 
         <div className="nav-links">
           {[["mapa", "Mapa"], ["ranking", "Ranking"], ["noticias", "Noticias"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
-            <button key={v} onClick={() => setVista(v)} style={{ background: "none", border: "none", padding: "22px 16px", cursor: "pointer", borderBottom: vista === v ? `2px solid ${T.orange}` : "2px solid transparent", color: vista === v ? T.text : T.textMid, fontWeight: vista === v ? 700 : 500, fontSize: 15, fontFamily: "inherit" }}>{l}</button>
+            <button key={v} onClick={() => setVista(v)} className="nav-link-btn" style={{ background: "none", border: "none", padding: "22px 16px", cursor: "pointer", borderBottom: vista === v ? `2px solid ${T.orange}` : "2px solid transparent", color: vista === v ? T.text : T.textMid, fontWeight: vista === v ? 700 : 500, fontSize: 15, fontFamily: "inherit" }}>{l}</button>
           ))}
         </div>
 
@@ -807,8 +875,8 @@ export default function App() {
         <div className="nav-cta">
           {usuario
             ? <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 13, color: T.textMid }}>✓ {usuario.email}</span>
-                <button onClick={cerrarSesion} style={{ fontSize: 13, color: T.textLight, background: "none", border: `1px solid ${T.border}`, padding: "7px 14px", borderRadius: T.radiusSm, cursor: "pointer", fontFamily: "inherit" }}>Salir</button>
+                <span className="nav-user-email" style={{ fontSize: 13, color: T.textMid }}>✓ {usuario.email}</span>
+                <button onClick={cerrarSesion} className="nav-user-logout" style={{ fontSize: 13, color: T.textLight, background: "none", border: `1px solid ${T.border}`, padding: "7px 14px", borderRadius: T.radiusSm, cursor: "pointer", fontFamily: "inherit" }}>Salir</button>
               </div>
             : <BtnPrimary onClick={() => setMostrarModalCalificar(true)}>Calificar municipio</BtnPrimary>
           }
@@ -860,7 +928,7 @@ export default function App() {
           <div className="hero-bar">
             {/* Bloque izquierdo: textos */}
             <div className="hero-left">
-              <p style={{ margin: 0, fontSize: 12, color: T.orange, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600 }}>
+              <p className="hero-badge" style={{ margin: 0, fontSize: 12, color: T.orange, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600 }}>
                 NUEVO · ÍNDICE MUNICIPAL DE CONSTRUCCIÓN
               </p>
               <h1 style={{ margin: 0, fontSize: 40, fontWeight: 800, color: T.text, lineHeight: 1.2 }}>
@@ -872,7 +940,7 @@ export default function App() {
                 <span style={{ fontWeight: 800, color: T.red }}>difícil</span>{" "}
                 construir
               </h1>
-              <p style={{ margin: 0, fontSize: 17, color: "#555" }}>
+              <p className="hero-sub" style={{ margin: 0, fontSize: 17, color: "#555" }}>
                 Transparencia, tiempos y burocracia municipio por municipio.
               </p>
             </div>
@@ -888,15 +956,15 @@ export default function App() {
                   { label: "Mayor dificultad", val: peor?.nombre,      col: T.red },
                 ].map((s, i) => (
                   <div key={i}>
-                    <p style={{ margin: 0, fontSize: 12, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>{s.label}</p>
-                    <p style={{ margin: "3px 0 0", fontSize: 24, fontWeight: 800, color: s.col }}>{s.val || "—"}</p>
+                    <p className="stat-label" style={{ margin: 0, fontSize: 12, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>{s.label}</p>
+                    <p className="stat-value" style={{ margin: "3px 0 0", fontSize: 24, fontWeight: 800, color: s.col }}>{s.val || "—"}</p>
                   </div>
                 ))
             }
           </div>
           {/* CTA */}
           <div style={{ display: "flex", justifyContent: "center", margin: "1rem 0" }}>
-            <div style={{ padding: "0.6rem 1.4rem", borderRadius: 999, background: "#F5F5F5", border: "1px solid #E0E0E0", color: "#333", fontSize: 13, whiteSpace: "nowrap" }}>
+            <div className="cta-pill" style={{ padding: "0.6rem 1.4rem", borderRadius: 999, background: "#F5F5F5", border: "1px solid #E0E0E0", color: "#333", fontSize: 13, whiteSpace: "nowrap" }}>
               👆 Hacé clic en tu municipio para ver su estadística y puntuarlo
             </div>
           </div>
@@ -926,8 +994,8 @@ export default function App() {
           <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "center" }}>
             {[[T.green, "≥ 4.0 Favorable"], [T.yellow, "3–3.9 Moderado"], [T.red, "< 3.0 Difícil"]].map(([c, l]) => (
               <div key={l} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: c }} />
-                <span style={{ fontSize: 12, color: T.textMid }}>{l}</span>
+                <div className="legend-dot" style={{ width: 10, height: 10, borderRadius: "50%", background: c }} />
+                <span className="legend-text" style={{ fontSize: 12, color: T.textMid }}>{l}</span>
               </div>
             ))}
           </div>
@@ -943,9 +1011,9 @@ export default function App() {
       {vista === "noticias" && (
         <div style={{ flex: 1, width: "100%", padding: "52px 48px", animation: "fadeUp 0.25s ease" }}>
           <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
-            <p style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Blog & Noticias</p>
-            <h1 style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>Para <span style={{ color: T.orange }}>desarrolladores</span> e inversores</h1>
-            <p style={{ fontSize: 17, color: T.textMid, margin: "0 0 40px" }}>Normativa, análisis y novedades del sector en el AMBA.</p>
+            <p className="noticias-badge" style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Blog & Noticias</p>
+            <h1 className="noticias-h1" style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>Para <span style={{ color: T.orange }}>desarrolladores</span> e inversores</h1>
+            <p className="noticias-sub" style={{ fontSize: 17, color: T.textMid, margin: "0 0 40px" }}>Normativa, análisis y novedades del sector en el AMBA.</p>
           </div>
 
           {cargando
@@ -1002,14 +1070,14 @@ export default function App() {
           <div style={{ marginTop: 56 }}>
             <div style={{ marginBottom: 24 }}>
               <div style={{ textAlign: "center", marginBottom: 12 }}>
-                <p style={{ margin: "0 0 4px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", textAlign: "center" }}>Comunidad</p>
-                <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: T.text, letterSpacing: -0.5, textAlign: "center" }}>Opiniones anónimas</h2>
+                <p className="community-badge" style={{ margin: "0 0 4px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", textAlign: "center" }}>Comunidad</p>
+                <h2 className="community-title" style={{ margin: 0, fontSize: 24, fontWeight: 800, color: T.text, letterSpacing: -0.5, textAlign: "center" }}>Opiniones anónimas</h2>
               </div>
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <div style={{ display: "flex", justifyContent: "center" }}>
                 <select
                   value={filtroComMunicipio}
                   onChange={e => setFiltroComMunicipio(e.target.value)}
-                  style={{ padding: "9px 14px", borderRadius: T.radius, border: `1.5px solid ${T.border}`, background: T.bg, color: filtroComMunicipio ? T.text : T.textLight, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}
+                  className="community-select" style={{ padding: "9px 14px", borderRadius: T.radius, border: `1.5px solid ${T.border}`, background: T.bg, color: filtroComMunicipio ? T.text : T.textLight, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}
                 >
                   <option value="">Todos los municipios</option>
                   {municipios.map(m => <option key={m.id} value={m.nombre}>{m.nombre}</option>)}
@@ -1050,11 +1118,11 @@ export default function App() {
       {vista === "metodologia" && (
         <div style={{ flex: 1, width: "100%", padding: "52px 48px", animation: "fadeUp 0.25s ease" }}>
           <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
-            <p style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Transparencia</p>
-            <h1 style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>Metodología & <span style={{ color: T.orange }}>Privacidad</span></h1>
-            <p style={{ fontSize: 17, color: T.textMid, marginBottom: 36, lineHeight: 1.7 }}>Munilupa es una herramienta de inteligencia colectiva. Los índices reflejan la experiencia de los usuarios, no la posición de ninguna organización ni partido político.</p>
+            <p className="metodo-badge" style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Transparencia</p>
+            <h1 className="metodo-h1" style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>Metodología & <span style={{ color: T.orange }}>Privacidad</span></h1>
+            <p className="metodo-sub" style={{ fontSize: 17, color: T.textMid, marginBottom: 36, lineHeight: 1.7 }}>Munilupa es una herramienta de inteligencia colectiva. Los índices reflejan la experiencia de los usuarios, no la posición de ninguna organización ni partido político.</p>
           </div>
-          <div style={{ maxWidth: 860, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="faq-container" style={{ maxWidth: 860, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
             {[
               { icon: "⚖️", titulo: "¿Cómo se calcula el índice?", texto: `Transparencia (25%) · Velocidad de aprobación (20%) · Claridad normativa (20%) · Previsibilidad (15%) · Atención al público (10%) · Carga impositiva (10%). El promedio ponderado de todas las encuestas válidas genera el índice de cada municipio.` },
               { icon: "🙋", titulo: "¿Quién puede participar?", texto: "Desarrolladores, constructores, arquitectos, ingenieros y vecinos que construyeron su vivienda. Recomendamos calificar solo municipios donde hayas trabajado, aunque no hay restricción formal." },
@@ -1064,8 +1132,8 @@ export default function App() {
               <div key={i} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "28px 36px", display: "flex", alignItems: "center", gap: 22, boxShadow: T.shadowCard }}>
                 <div style={{ fontSize: 32, width: 48, flexShrink: 0, textAlign: "center" }}>{s.icon}</div>
                 <div style={{ flex: 1, textAlign: "left" }}>
-                  <p style={{ margin: "0 0 8px", fontSize: 19, fontWeight: 700, color: T.text }}>{s.titulo}</p>
-                  <p style={{ margin: 0, fontSize: 15, color: T.textMid, lineHeight: 1.7 }}>{s.texto}</p>
+                  <p className="faq-title" style={{ margin: "0 0 8px", fontSize: 19, fontWeight: 700, color: T.text }}>{s.titulo}</p>
+                  <p className="faq-body" style={{ margin: 0, fontSize: 15, color: T.textMid, lineHeight: 1.7 }}>{s.texto}</p>
                 </div>
               </div>
             ))}
@@ -1074,7 +1142,7 @@ export default function App() {
               <div style={{ width: 56, height: 56, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, boxShadow: T.shadowCard }}>🤝</div>
               <div style={{ flex: 1, textAlign: "left" }}>
                 <p style={{ margin: "0 0 4px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>Patrocinios</p>
-                <p style={{ margin: 0, fontSize: 15, color: T.textMid }}>¿Tu empresa quiere llegar a desarrolladores del AMBA? <span style={{ color: T.orange, fontWeight: 700, cursor: "pointer" }} onClick={() => setVista("contacto")}>Hablemos →</span></p>
+                <p className="sponsor-text" style={{ margin: 0, fontSize: 15, color: T.textMid }}>¿Tu empresa quiere llegar a desarrolladores del AMBA? <span style={{ color: T.orange, fontWeight: 700, cursor: "pointer" }} onClick={() => setVista("contacto")}>Hablemos →</span></p>
               </div>
             </div>
           </div>
@@ -1084,11 +1152,11 @@ export default function App() {
       {/* VISTA: CONTACTO */}
       {vista === "contacto" && (
         <div style={{ flex: 1, width: "100%", padding: "52px 48px", animation: "fadeUp 0.25s ease", display: "flex", flexDirection: "column", alignItems: "center"}}>
-          <p style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Escribinos</p>
-          <h1 style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>
+          <p className="contact-badge" style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Escribinos</p>
+          <h1 className="contact-h1" style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>
             <span style={{ color: T.orange }}>Contacto</span>
           </h1>
-          <p style={{ fontSize: 17, color: T.textMid, margin: "0 0 36px", lineHeight: 1.7 }}>
+          <p className="contact-sub" style={{ fontSize: 17, color: T.textMid, margin: "0 0 36px", lineHeight: 1.7 }}>
             ¿Encontraste un error, querés dar feedback o hablar de patrocinios? Completá el formulario y te respondemos.
           </p>
 
@@ -1102,76 +1170,78 @@ export default function App() {
               </div>
             </div>
           ) : (
-            <div style={{ maxWidth: 680, margin: "0 auto" }}>
+            <div className="contact-form-wrap" style={{ maxWidth: 680, margin: "0 auto" }}>
               {errorContacto && (
                 <div style={{ padding: "12px 14px", borderRadius: T.radiusSm, background: T.redSoft, border: `1px solid ${T.redMid}`, color: T.red, fontSize: 13, marginBottom: 20 }}>{errorContacto}</div>
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                   <div style={{ flex: 1, minWidth: 200 }}>
-                    <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: T.textMid, marginBottom: 7, letterSpacing: 0.5 }}>NOMBRE</label>
+                    <label className="contact-label" style={{ display: "block", fontSize: 13, fontWeight: 700, color: T.textMid, marginBottom: 7, letterSpacing: 0.5 }}>NOMBRE</label>
                     <input
                       type="text"
                       placeholder="Tu nombre"
                       value={contactForm.nombre}
                       onChange={e => setContactForm(f => ({ ...f, nombre: e.target.value }))}
-                      style={{ width: "100%", padding: "14px 18px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 16, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                      className="contact-input" style={{ width: "100%", padding: "14px 18px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 16, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
                   <div style={{ flex: 1, minWidth: 200 }}>
-                    <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: T.textMid, marginBottom: 7, letterSpacing: 0.5 }}>EMAIL</label>
+                    <label className="contact-label" style={{ display: "block", fontSize: 13, fontWeight: 700, color: T.textMid, marginBottom: 7, letterSpacing: 0.5 }}>EMAIL</label>
                     <input
                       type="email"
                       placeholder="tu@email.com"
                       value={contactForm.email}
                       onChange={e => setContactForm(f => ({ ...f, email: e.target.value }))}
-                      style={{ width: "100%", padding: "14px 18px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 16, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                      className="contact-input" style={{ width: "100%", padding: "14px 18px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 16, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: T.textMid, marginBottom: 7, letterSpacing: 0.5 }}>TIPO DE CONSULTA</label>
+                  <label className="contact-label" style={{ display: "block", fontSize: 13, fontWeight: 700, color: T.textMid, marginBottom: 7, letterSpacing: 0.5 }}>TIPO DE CONSULTA</label>
                   <select
                     value={contactForm.tipoConsulta}
                     onChange={e => setContactForm(f => ({ ...f, tipoConsulta: e.target.value }))}
-                    style={{ width: "100%", padding: "14px 18px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: contactForm.tipoConsulta ? T.text : T.textLight, fontSize: 16, fontFamily: "inherit", outline: "none" }}
+                    className="contact-select" style={{ width: "100%", padding: "14px 18px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: contactForm.tipoConsulta ? T.text : T.textLight, fontSize: 16, fontFamily: "inherit", outline: "none" }}
                   >
                     <option value="">Seleccioná una opción</option>
                     {["Feedback", "Error técnico", "Publicidad / Patrocinio", "Otro"].map(o => <option key={o}>{o}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: T.textMid, marginBottom: 7, letterSpacing: 0.5 }}>MENSAJE</label>
+                  <label className="contact-label" style={{ display: "block", fontSize: 13, fontWeight: 700, color: T.textMid, marginBottom: 7, letterSpacing: 0.5 }}>MENSAJE</label>
                   <textarea
                     placeholder="Escribí tu mensaje..."
                     value={contactForm.mensaje}
                     onChange={e => setContactForm(f => ({ ...f, mensaje: e.target.value }))}
                     rows={5}
                     maxLength={1000}
-                    style={{ width: "100%", padding: "14px 18px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 16, fontFamily: "inherit", outline: "none", resize: "vertical", boxSizing: "border-box", minHeight: 140 }}
+                    className="contact-textarea" style={{ width: "100%", padding: "14px 18px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 16, fontFamily: "inherit", outline: "none", resize: "vertical", boxSizing: "border-box", minHeight: 140 }}
                   />
                   {contactForm.mensaje.length > 0 && (
                     <p style={{ margin: "4px 0 0", fontSize: 11, color: T.textLight, textAlign: "right" }}>{contactForm.mensaje.length}/1000</p>
                   )}
                 </div>
-                <BtnPrimary
-                  full
-                  disabled={enviandoContacto || !contactForm.nombre || !contactForm.email || !contactForm.tipoConsulta || !contactForm.mensaje}
-                  onClick={async () => {
-                    setEnviandoContacto(true); setErrorContacto(null);
-                    const { error } = await enviarContacto({
-                      nombre:       contactForm.nombre,
-                      email:        contactForm.email,
-                      tipoConsulta: contactForm.tipoConsulta,
-                      mensaje:      contactForm.mensaje,
-                    });
-                    setEnviandoContacto(false);
-                    if (error) { setErrorContacto("No se pudo enviar el mensaje. Intentá de nuevo."); return; }
-                    setContactoEnviado(true);
-                  }}
-                >
-                  {enviandoContacto ? "Enviando..." : "Enviar mensaje →"}
-                </BtnPrimary>
+                <div className="contact-submit-wrap">
+                  <BtnPrimary
+                    full
+                    disabled={enviandoContacto || !contactForm.nombre || !contactForm.email || !contactForm.tipoConsulta || !contactForm.mensaje}
+                    onClick={async () => {
+                      setEnviandoContacto(true); setErrorContacto(null);
+                      const { error } = await enviarContacto({
+                        nombre:       contactForm.nombre,
+                        email:        contactForm.email,
+                        tipoConsulta: contactForm.tipoConsulta,
+                        mensaje:      contactForm.mensaje,
+                      });
+                      setEnviandoContacto(false);
+                      if (error) { setErrorContacto("No se pudo enviar el mensaje. Intentá de nuevo."); return; }
+                      setContactoEnviado(true);
+                    }}
+                  >
+                    {enviandoContacto ? "Enviando..." : "Enviar mensaje →"}
+                  </BtnPrimary>
+                </div>
               </div>
             </div>
           )}
@@ -1181,7 +1251,7 @@ export default function App() {
       {/* FOOTER */}
       <footer style={{ borderTop: `1px solid ${T.border}`, padding: "20px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", background: T.bg, fontSize: 13, color: T.textLight, flexWrap: "wrap", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontWeight: 800, fontSize: 15, color: T.text }}>Muni<span style={{ color: T.orange }}>lupa</span></span>
+          <span className="footer-logo" style={{ fontWeight: 800, fontSize: 15, color: T.text }}>Muni<span style={{ color: T.orange }}>lupa</span></span>
           <span style={{ color: T.borderMid }}>·</span>
           <span>© 2025 · Gestión Municipal a la vista</span>
         </div>
