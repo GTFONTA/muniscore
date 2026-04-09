@@ -130,9 +130,9 @@ const CatBar = ({ label, val, peso }) => {
 
 const BtnPrimary = ({ children, onClick, full, disabled, style: extra }) => (
   <button onClick={onClick} disabled={disabled} style={{
-    width: full ? "100%" : "auto", padding: "13px 22px", borderRadius: T.radius,
+    width: full ? "100%" : "auto", padding: "16px 32px", borderRadius: T.radius,
     background: disabled ? T.bgMuted : T.orange, border: "none",
-    color: disabled ? T.textLight : "#fff", fontWeight: 700, fontSize: 14,
+    color: disabled ? T.textLight : "#fff", fontWeight: 700, fontSize: 16,
     cursor: disabled ? "not-allowed" : "pointer", fontFamily: "inherit",
     boxShadow: disabled ? "none" : `0 4px 18px ${T.orange}44`,
     transition: "all 0.15s", ...extra,
@@ -223,18 +223,18 @@ const VistaRanking = ({ municipios, onRefresh }) => {
       : `${valor.toFixed(1)} / 5`;
 
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: `1px solid ${T.border}` }}>
-        <span style={{ width: 24, textAlign: "right", fontSize: 13, fontWeight: 700, color: T.textLight, flexShrink: 0 }}>{pos}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: `1px solid ${T.border}` }}>
+        <span style={{ width: 26, textAlign: "right", fontSize: 14, fontWeight: 700, color: T.textLight, flexShrink: 0 }}>{pos}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nombre}</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: barColor, marginLeft: 8, flexShrink: 0 }}>{valorStr}</span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nombre}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: barColor, marginLeft: 8, flexShrink: 0 }}>{valorStr}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ flex: 1, height: 6, borderRadius: 99, background: barSoft, overflow: "hidden" }}>
+            <div style={{ flex: 1, height: 7, borderRadius: 99, background: barSoft, overflow: "hidden" }}>
               <div style={{ height: "100%", width: barWidth, borderRadius: 99, background: barColor, transition: "width 0.4s ease" }} />
             </div>
-            <span style={{ fontSize: 10, color: T.textLight, flexShrink: 0 }}>{votos} eval.</span>
+            <span style={{ fontSize: 11, color: T.textLight, flexShrink: 0 }}>{votos} eval.</span>
           </div>
         </div>
       </div>
@@ -242,8 +242,8 @@ const VistaRanking = ({ municipios, onRefresh }) => {
   };
 
   const TablaRanking = ({ titulo, filas, esMejores }) => (
-    <div style={{ flex: 1, background: T.bg, borderRadius: T.radiusXl, border: `1px solid ${T.border}`, padding: "24px 24px 16px", boxShadow: T.shadowCard }}>
-      <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 800, color: T.text }}>{titulo}</h3>
+    <div style={{ flex: 1, background: T.bg, borderRadius: T.radiusXl, border: `1px solid ${T.border}`, padding: "28px 28px 18px", boxShadow: T.shadowCard }}>
+      <h3 style={{ margin: "0 0 18px", fontSize: 20, fontWeight: 800, color: T.text }}>{titulo}</h3>
       {filas.length === 0
         ? <p style={{ fontSize: 13, color: T.textLight, textAlign: "center", padding: "24px 0" }}>Sin datos suficientes aún</p>
         : filas.map((f, i) => <FilaRanking key={i} pos={i + 1} nombre={f.nombre} valor={f.valor} votos={f.votos} esMejores={esMejores} />)
@@ -253,20 +253,20 @@ const VistaRanking = ({ municipios, onRefresh }) => {
   );
 
   return (
-    <div style={{ flex: 1, width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease" }}>
+    <div style={{ flex: 1, width: "100%", padding: "52px 48px", animation: "fadeUp 0.25s ease" }}>
       <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
-        <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Índice AMBA</p>
-        <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>
+        <p style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Índice AMBA</p>
+        <h1 style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>
           Ranking de <span style={{ color: T.orange }}>municipios</span>
         </h1>
-        <p style={{ fontSize: 15, color: T.textMid, margin: "0 0 28px" }}>Compará el desempeño de cada municipio según la categoría que más te interesa.</p>
+        <p style={{ fontSize: 17, color: T.textMid, margin: "0 0 28px" }}>Compará el desempeño de cada municipio según la categoría que más te interesa.</p>
       </div>
 
       <div style={{ marginBottom: 28 }}>
         <select
           value={categoria}
           onChange={e => setCategoria(e.target.value)}
-          style={{ padding: "10px 16px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 14, fontFamily: "inherit", cursor: "pointer", outline: "none", minWidth: 280 }}
+          style={{ padding: "12px 18px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 15, fontFamily: "inherit", cursor: "pointer", outline: "none", minWidth: 300 }}
         >
           {CATEGORIAS_RANKING.map(c => (
             <option key={c.key} value={c.key}>{c.label}</option>
@@ -745,7 +745,7 @@ export default function App() {
       }
       .hero-bar {
         width: 100%;
-        padding: 0.75rem 2rem;
+        padding: 1.25rem 3rem;
         border-radius: 0;
         background: #FFFAF7;
         border-bottom: 1px solid ${T.orangeMid};
@@ -757,7 +757,7 @@ export default function App() {
       .hero-left {
         display: flex;
         flex-direction: column;
-        gap: 0.2rem;
+        gap: 0.35rem;
         align-items: center;
       }
       @media (max-width:768px) {
@@ -786,18 +786,18 @@ export default function App() {
     <div style={{ fontFamily: "'Manrope', sans-serif", background: T.bgWarm, color: T.text, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
 
       {/* NAVBAR */}
-      <nav style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", borderBottom: `1px solid ${T.border}`, padding: "0 32px", display: "flex", alignItems: "center", height: 62, gap: 32, position: "sticky", top: 0, zIndex: 50, boxShadow: `0 1px 0 ${T.border}` , position: "sticky", top: 0, zIndex: 1000}}>
+      <nav style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", borderBottom: `1px solid ${T.border}`, padding: "0 48px", display: "flex", alignItems: "center", height: 64, gap: 32, position: "sticky", top: 0, zIndex: 1000, boxShadow: `0 1px 0 ${T.border}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img src="/logo-icono.png" alt="MuniLupa ícono" style={{ height: "48px", width: "auto", objectFit: "contain" }} />
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>Muni<span style={{ color: T.orange }}>lupa</span></div>
-            <div style={{ fontSize: 9, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>Gestión Municipal a la vista</div>
+            <div style={{ fontSize: 21, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>Muni<span style={{ color: T.orange }}>lupa</span></div>
+            <div style={{ fontSize: 10, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>Gestión Municipal a la vista</div>
           </div>
         </div>
 
         <div className="nav-links">
           {[["mapa", "Mapa"], ["ranking", "Ranking"], ["noticias", "Noticias"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
-            <button key={v} onClick={() => setVista(v)} style={{ background: "none", border: "none", padding: "22px 16px", cursor: "pointer", borderBottom: vista === v ? `2px solid ${T.orange}` : "2px solid transparent", color: vista === v ? T.text : T.textMid, fontWeight: vista === v ? 700 : 500, fontSize: 14, fontFamily: "inherit" }}>{l}</button>
+            <button key={v} onClick={() => setVista(v)} style={{ background: "none", border: "none", padding: "22px 16px", cursor: "pointer", borderBottom: vista === v ? `2px solid ${T.orange}` : "2px solid transparent", color: vista === v ? T.text : T.textMid, fontWeight: vista === v ? 700 : 500, fontSize: 15, fontFamily: "inherit" }}>{l}</button>
           ))}
         </div>
 
@@ -807,8 +807,8 @@ export default function App() {
         <div className="nav-cta">
           {usuario
             ? <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 12, color: T.textMid }}>✓ {usuario.email}</span>
-                <button onClick={cerrarSesion} style={{ fontSize: 12, color: T.textLight, background: "none", border: `1px solid ${T.border}`, padding: "6px 12px", borderRadius: T.radiusSm, cursor: "pointer", fontFamily: "inherit" }}>Salir</button>
+                <span style={{ fontSize: 13, color: T.textMid }}>✓ {usuario.email}</span>
+                <button onClick={cerrarSesion} style={{ fontSize: 13, color: T.textLight, background: "none", border: `1px solid ${T.border}`, padding: "7px 14px", borderRadius: T.radiusSm, cursor: "pointer", fontFamily: "inherit" }}>Salir</button>
               </div>
             : <BtnPrimary onClick={() => setMostrarModalCalificar(true)}>Calificar municipio</BtnPrimary>
           }
@@ -860,10 +860,10 @@ export default function App() {
           <div className="hero-bar">
             {/* Bloque izquierdo: textos */}
             <div className="hero-left">
-              <p style={{ margin: 0, fontSize: "0.65rem", color: T.orange, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600 }}>
+              <p style={{ margin: 0, fontSize: 12, color: T.orange, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600 }}>
                 NUEVO · ÍNDICE MUNICIPAL DE CONSTRUCCIÓN
               </p>
-              <h1 style={{ margin: 0, fontSize: "1.4rem", fontWeight: 800, color: T.text, lineHeight: 1.2 }}>
+              <h1 style={{ margin: 0, fontSize: 40, fontWeight: 800, color: T.text, lineHeight: 1.2 }}>
                 El primer mapa que revela en qué{" "}
                 <span style={{ fontWeight: 800, fontStyle: "italic", color: T.orange }}>municipios</span>{" "}
                 es más{" "}
@@ -872,15 +872,15 @@ export default function App() {
                 <span style={{ fontWeight: 800, color: T.red }}>difícil</span>{" "}
                 construir
               </h1>
-              <p style={{ margin: 0, fontSize: "0.8rem", color: "#555" }}>
+              <p style={{ margin: 0, fontSize: 17, color: "#555" }}>
                 Transparencia, tiempos y burocracia municipio por municipio.
               </p>
             </div>
           </div>
           {/* Stats */}
-          <div style={{ background: T.bg, borderBottom: `1px solid ${T.border}`, padding: "14px 32px", display: "flex", gap: 40, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+          <div style={{ background: T.bg, borderBottom: `1px solid ${T.border}`, padding: "18px 48px", display: "flex", gap: 48, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
             {cargando
-              ? [1,2,3,4].map(i => <Skeleton key={i} w={120} h={34} />)
+              ? [1,2,3,4].map(i => <Skeleton key={i} w={120} h={40} />)
               : [
                   { label: "Promedio AMBA",    val: prom + " / 5.0",  col: getScore(parseFloat(prom)).c },
                   { label: "Evaluaciones",     val: totalVotos,        col: T.blue },
@@ -888,15 +888,15 @@ export default function App() {
                   { label: "Mayor dificultad", val: peor?.nombre,      col: T.red },
                 ].map((s, i) => (
                   <div key={i}>
-                    <p style={{ margin: 0, fontSize: 10, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>{s.label}</p>
-                    <p style={{ margin: "2px 0 0", fontSize: 15, fontWeight: 800, color: s.col }}>{s.val || "—"}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>{s.label}</p>
+                    <p style={{ margin: "3px 0 0", fontSize: 24, fontWeight: 800, color: s.col }}>{s.val || "—"}</p>
                   </div>
                 ))
             }
           </div>
           {/* CTA */}
-          <div style={{ display: "flex", justifyContent: "center", margin: "0.75rem 0" }}>
-            <div style={{ padding: "0.5rem 1.2rem", borderRadius: 999, background: "#F5F5F5", border: "1px solid #E0E0E0", color: "#333", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+          <div style={{ display: "flex", justifyContent: "center", margin: "1rem 0" }}>
+            <div style={{ padding: "0.6rem 1.4rem", borderRadius: 999, background: "#F5F5F5", border: "1px solid #E0E0E0", color: "#333", fontSize: 13, whiteSpace: "nowrap" }}>
               👆 Hacé clic en tu municipio para ver su estadística y puntuarlo
             </div>
           </div>
@@ -941,11 +941,11 @@ export default function App() {
 
       {/* VISTA: NOTICIAS */}
       {vista === "noticias" && (
-        <div style={{ flex: 1, width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease" }}>
+        <div style={{ flex: 1, width: "100%", padding: "52px 48px", animation: "fadeUp 0.25s ease" }}>
           <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
-            <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Blog & Noticias</p>
-            <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>Para <span style={{ color: T.orange }}>desarrolladores</span> e inversores</h1>
-            <p style={{ fontSize: 15, color: T.textMid, margin: "0 0 40px" }}>Normativa, análisis y novedades del sector en el AMBA.</p>
+            <p style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Blog & Noticias</p>
+            <h1 style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>Para <span style={{ color: T.orange }}>desarrolladores</span> e inversores</h1>
+            <p style={{ fontSize: 17, color: T.textMid, margin: "0 0 40px" }}>Normativa, análisis y novedades del sector en el AMBA.</p>
           </div>
 
           {cargando
@@ -959,11 +959,11 @@ export default function App() {
                     const dest = articulos.find(a => a.destacado);
                     return (
                       <div style={{ display: "flex", borderRadius: T.radiusXl, overflow: "hidden", background: T.bg, boxShadow: T.shadowHover, border: `1px solid ${T.border}`, marginBottom: 32, cursor: "pointer" }}>
-                        {dest.imagen_url && <div style={{ width: "42%", flexShrink: 0, overflow: "hidden", minHeight: 260 }}><img src={dest.imagen_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => e.target.style.display = "none"} /></div>}
-                        <div style={{ padding: "32px 36px" }}>
+                        {dest.imagen_url && <div style={{ width: "42%", flexShrink: 0, overflow: "hidden", minHeight: 280 }}><img src={dest.imagen_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => e.target.style.display = "none"} /></div>}
+                        <div style={{ padding: "36px 40px" }}>
                           <Pill label="DESTACADO" color={T.orange} />
-                          <h2 style={{ margin: "12px 0 12px", fontSize: 22, fontWeight: 800, color: T.text, lineHeight: 1.35 }}>{dest.titulo}</h2>
-                          <p style={{ fontSize: 14, color: T.textMid, lineHeight: 1.7, margin: "0 0 16px" }}>{dest.resumen}</p>
+                          <h2 style={{ margin: "14px 0 14px", fontSize: 24, fontWeight: 800, color: T.text, lineHeight: 1.35 }}>{dest.titulo}</h2>
+                          <p style={{ fontSize: 15, color: T.textMid, lineHeight: 1.7, margin: "0 0 18px" }}>{dest.resumen}</p>
                           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
                             <span style={{ fontSize: 12, color: T.textLight }}>{formatFecha(dest.created_at)}</span>
                             <span style={{ fontSize: 13, color: T.orange, fontWeight: 700 }}>Leer artículo →</span>
@@ -972,16 +972,16 @@ export default function App() {
                       </div>
                     );
                   })()}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(290px,1fr))", gap: 22 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 24 }}>
                     {articulos.filter(a => !a.destacado).map((n, i) => (
                       <div key={i} style={{ background: T.bg, borderRadius: T.radiusXl, overflow: "hidden", border: `1px solid ${T.border}`, cursor: "pointer", boxShadow: T.shadowCard, transition: "box-shadow 0.2s, transform 0.2s" }}
                         onMouseEnter={e => { e.currentTarget.style.boxShadow = T.shadowHover; e.currentTarget.style.transform = "translateY(-4px)"; }}
                         onMouseLeave={e => { e.currentTarget.style.boxShadow = T.shadowCard; e.currentTarget.style.transform = "translateY(0)"; }}
                       >
-                        {n.imagen_url && <div style={{ height: 180, overflow: "hidden", background: T.bgMuted }}><img src={n.imagen_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => e.target.style.display = "none"} /></div>}
-                        <div style={{ padding: "20px 22px 22px" }}>
+                        {n.imagen_url && <div style={{ height: 200, overflow: "hidden", background: T.bgMuted }}><img src={n.imagen_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => e.target.style.display = "none"} /></div>}
+                        <div style={{ padding: "24px 26px 26px" }}>
                           <div style={{ marginBottom: 12 }}><Pill label={n.categoria} color={T.blue} /></div>
-                          <h3 style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 700, color: T.text, lineHeight: 1.45 }}>{n.titulo}</h3>
+                          <h3 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 700, color: T.text, lineHeight: 1.45 }}>{n.titulo}</h3>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <span style={{ fontSize: 12, color: T.textLight }}>{formatFecha(n.created_at)}</span>
                             <span style={{ fontSize: 13, color: T.orange, fontWeight: 700 }}>Leer →</span>
@@ -1048,11 +1048,11 @@ export default function App() {
 
       {/* VISTA: METODOLOGÍA */}
       {vista === "metodologia" && (
-        <div style={{ flex: 1, width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease" }}>
+        <div style={{ flex: 1, width: "100%", padding: "52px 48px", animation: "fadeUp 0.25s ease" }}>
           <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
-            <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Transparencia</p>
-            <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>Metodología & <span style={{ color: T.orange }}>Privacidad</span></h1>
-            <p style={{ fontSize: 15, color: T.textMid, marginBottom: 36, lineHeight: 1.7 }}>Munilupa es una herramienta de inteligencia colectiva. Los índices reflejan la experiencia de los usuarios, no la posición de ninguna organización ni partido político.</p>
+            <p style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Transparencia</p>
+            <h1 style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>Metodología & <span style={{ color: T.orange }}>Privacidad</span></h1>
+            <p style={{ fontSize: 17, color: T.textMid, marginBottom: 36, lineHeight: 1.7 }}>Munilupa es una herramienta de inteligencia colectiva. Los índices reflejan la experiencia de los usuarios, no la posición de ninguna organización ni partido político.</p>
           </div>
           <div style={{ maxWidth: 860, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
             {[
@@ -1061,20 +1061,20 @@ export default function App() {
               { icon: "🛡️", titulo: "¿Cómo se evitan votos duplicados?", texto: "Cada email puede votar una sola vez por municipio. El sistema valida el email antes de registrar el voto." },
               { icon: "🔒", titulo: "Privacidad de tus datos", texto: "Almacenamos únicamente el hash de tu email, la fecha del voto y los puntajes. Cumplimos con la Ley 25.326 de Protección de Datos Personales de la República Argentina." },
             ].map((s, i) => (
-              <div key={i} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "22px 26px", display: "flex", alignItems: "center", gap: 18, boxShadow: T.shadowCard }}>
-                <div style={{ fontSize: 26, width: 40, flexShrink: 0, textAlign: "center" }}>{s.icon}</div>
-                <div style={{ flex: 1, textAlign: "center" }}>
-                  <p style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 700, color: T.text }}>{s.titulo}</p>
-                  <p style={{ margin: 0, fontSize: 13, color: T.textMid, lineHeight: 1.7 }}>{s.texto}</p>
+              <div key={i} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "28px 36px", display: "flex", alignItems: "center", gap: 22, boxShadow: T.shadowCard }}>
+                <div style={{ fontSize: 32, width: 48, flexShrink: 0, textAlign: "center" }}>{s.icon}</div>
+                <div style={{ flex: 1, textAlign: "left" }}>
+                  <p style={{ margin: "0 0 8px", fontSize: 19, fontWeight: 700, color: T.text }}>{s.titulo}</p>
+                  <p style={{ margin: 0, fontSize: 15, color: T.textMid, lineHeight: 1.7 }}>{s.texto}</p>
                 </div>
               </div>
             ))}
             {/* Sponsor */}
-            <div style={{ marginTop: 18, padding: "22px 26px", borderRadius: T.radiusXl, background: `linear-gradient(135deg, ${T.orangeSoft}, #FFF)`, border: `1.5px solid ${T.orangeMid}`, display: "flex", alignItems: "center", gap: 18 }}>
-              <div style={{ width: 52, height: 52, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, boxShadow: T.shadowCard }}>🤝</div>
-              <div style={{ flex: 1, textAlign: "center" }}>
-                <p style={{ margin: "0 0 3px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>Patrocinios</p>
-                <p style={{ margin: 0, fontSize: 14, color: T.textMid }}>¿Tu empresa quiere llegar a desarrolladores del AMBA? <span style={{ color: T.orange, fontWeight: 700, cursor: "pointer" }} onClick={() => setVista("contacto")}>Hablemos →</span></p>
+            <div style={{ marginTop: 18, padding: "26px 36px", borderRadius: T.radiusXl, background: `linear-gradient(135deg, ${T.orangeSoft}, #FFF)`, border: `1.5px solid ${T.orangeMid}`, display: "flex", alignItems: "center", gap: 22 }}>
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, boxShadow: T.shadowCard }}>🤝</div>
+              <div style={{ flex: 1, textAlign: "left" }}>
+                <p style={{ margin: "0 0 4px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>Patrocinios</p>
+                <p style={{ margin: 0, fontSize: 15, color: T.textMid }}>¿Tu empresa quiere llegar a desarrolladores del AMBA? <span style={{ color: T.orange, fontWeight: 700, cursor: "pointer" }} onClick={() => setVista("contacto")}>Hablemos →</span></p>
               </div>
             </div>
           </div>
@@ -1083,12 +1083,12 @@ export default function App() {
 
       {/* VISTA: CONTACTO */}
       {vista === "contacto" && (
-        <div style={{ flex: 1, width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease", display: "flex", flexDirection: "column", alignItems: "center"}}>
-          <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Escribinos</p>
-          <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>
+        <div style={{ flex: 1, width: "100%", padding: "52px 48px", animation: "fadeUp 0.25s ease", display: "flex", flexDirection: "column", alignItems: "center"}}>
+          <p style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Escribinos</p>
+          <h1 style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>
             <span style={{ color: T.orange }}>Contacto</span>
           </h1>
-          <p style={{ fontSize: 15, color: T.textMid, margin: "0 0 36px", lineHeight: 1.7 }}>
+          <p style={{ fontSize: 17, color: T.textMid, margin: "0 0 36px", lineHeight: 1.7 }}>
             ¿Encontraste un error, querés dar feedback o hablar de patrocinios? Completá el formulario y te respondemos.
           </p>
 
@@ -1102,53 +1102,53 @@ export default function App() {
               </div>
             </div>
           ) : (
-            <div style={{ maxWidth: 560, margin: "0 auto" }}>
+            <div style={{ maxWidth: 680, margin: "0 auto" }}>
               {errorContacto && (
                 <div style={{ padding: "12px 14px", borderRadius: T.radiusSm, background: T.redSoft, border: `1px solid ${T.redMid}`, color: T.red, fontSize: 13, marginBottom: 20 }}>{errorContacto}</div>
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                   <div style={{ flex: 1, minWidth: 200 }}>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: T.textMid, marginBottom: 6, letterSpacing: 0.5 }}>NOMBRE</label>
+                    <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: T.textMid, marginBottom: 7, letterSpacing: 0.5 }}>NOMBRE</label>
                     <input
                       type="text"
                       placeholder="Tu nombre"
                       value={contactForm.nombre}
                       onChange={e => setContactForm(f => ({ ...f, nombre: e.target.value }))}
-                      style={{ width: "100%", padding: "12px 14px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                      style={{ width: "100%", padding: "14px 18px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 16, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
                   <div style={{ flex: 1, minWidth: 200 }}>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: T.textMid, marginBottom: 6, letterSpacing: 0.5 }}>EMAIL</label>
+                    <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: T.textMid, marginBottom: 7, letterSpacing: 0.5 }}>EMAIL</label>
                     <input
                       type="email"
                       placeholder="tu@email.com"
                       value={contactForm.email}
                       onChange={e => setContactForm(f => ({ ...f, email: e.target.value }))}
-                      style={{ width: "100%", padding: "12px 14px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                      style={{ width: "100%", padding: "14px 18px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 16, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: T.textMid, marginBottom: 6, letterSpacing: 0.5 }}>TIPO DE CONSULTA</label>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: T.textMid, marginBottom: 7, letterSpacing: 0.5 }}>TIPO DE CONSULTA</label>
                   <select
                     value={contactForm.tipoConsulta}
                     onChange={e => setContactForm(f => ({ ...f, tipoConsulta: e.target.value }))}
-                    style={{ width: "100%", padding: "12px 14px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: contactForm.tipoConsulta ? T.text : T.textLight, fontSize: 14, fontFamily: "inherit", outline: "none" }}
+                    style={{ width: "100%", padding: "14px 18px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: contactForm.tipoConsulta ? T.text : T.textLight, fontSize: 16, fontFamily: "inherit", outline: "none" }}
                   >
                     <option value="">Seleccioná una opción</option>
                     {["Feedback", "Error técnico", "Publicidad / Patrocinio", "Otro"].map(o => <option key={o}>{o}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: T.textMid, marginBottom: 6, letterSpacing: 0.5 }}>MENSAJE</label>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: T.textMid, marginBottom: 7, letterSpacing: 0.5 }}>MENSAJE</label>
                   <textarea
                     placeholder="Escribí tu mensaje..."
                     value={contactForm.mensaje}
                     onChange={e => setContactForm(f => ({ ...f, mensaje: e.target.value }))}
                     rows={5}
                     maxLength={1000}
-                    style={{ width: "100%", padding: "12px 14px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 14, fontFamily: "inherit", outline: "none", resize: "vertical", boxSizing: "border-box" }}
+                    style={{ width: "100%", padding: "14px 18px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 16, fontFamily: "inherit", outline: "none", resize: "vertical", boxSizing: "border-box", minHeight: 140 }}
                   />
                   {contactForm.mensaje.length > 0 && (
                     <p style={{ margin: "4px 0 0", fontSize: 11, color: T.textLight, textAlign: "right" }}>{contactForm.mensaje.length}/1000</p>
