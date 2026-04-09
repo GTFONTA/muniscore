@@ -609,20 +609,20 @@ export default function App() {
         background: #FFFAF7;
         border-bottom: 1px solid ${T.orangeMid};
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
+        text-align: center;
       }
       .hero-left {
         display: flex;
         flex-direction: column;
         gap: 0.2rem;
+        align-items: center;
       }
       @media (max-width:768px) {
         .hero-bar {
           flex-direction: column;
-          align-items: flex-start;
+          align-items: center;
           padding: 1rem;
         }
         .hero-bar h1 {
@@ -735,10 +735,6 @@ export default function App() {
                 Transparencia, tiempos y burocracia municipio por municipio.
               </p>
             </div>
-            {/* Bloque derecho: CTA */}
-            <div style={{ flexShrink: 0, padding: "0.5rem 1.2rem", borderRadius: 999, background: "#F5F5F5", border: "1px solid #E0E0E0", color: "#333", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
-              👆 Hacé clic en tu municipio para ver su estadística y puntuarlo
-            </div>
           </div>
           {/* Stats */}
           <div style={{ background: T.bg, borderBottom: `1px solid ${T.border}`, padding: "14px 32px", display: "flex", gap: 40, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
@@ -756,39 +752,45 @@ export default function App() {
                   </div>
                 ))
             }
-            <div style={{ width: '100%', padding: '0 16px', position: 'relative' }}>
-              <MapaPoligonos
-                municipios={municipios}
-                onSeleccionar={(mun) => setActivo(mun)}
-              />
-              {activo && (
-                <div style={{ position: 'absolute', inset: 0, zIndex: 1000 }}>
-                  <PanelMunicipio
-                    mun={activo}
-                    usuario={usuario}
-                    onClose={() => setActivo(null)}
-                    onVotado={async () => {
-                      const { data } = await getMunicipios();
-                      if (data) {
-                        setMunicipios(data);
-                        const updated = data.find(m => m.id === activo.id);
-                        if (updated) setActivo(updated);
-                      }
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-            </div>
-            <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "center" }}>
-              {[[T.green, "≥ 4.0 Favorable"], [T.yellow, "3–3.9 Moderado"], [T.red, "< 3.0 Difícil"]].map(([c, l]) => (
-                <div key={l} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: c }} />
-                  <span style={{ fontSize: 12, color: T.textMid }}>{l}</span>
-                </div>
-              ))}
+          </div>
+          {/* CTA */}
+          <div style={{ display: "flex", justifyContent: "center", margin: "0.75rem 0" }}>
+            <div style={{ padding: "0.5rem 1.2rem", borderRadius: 999, background: "#F5F5F5", border: "1px solid #E0E0E0", color: "#333", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+              👆 Hacé clic en tu municipio para ver su estadística y puntuarlo
             </div>
           </div>
+          <div style={{ width: '100%', padding: '0 16px', position: 'relative' }}>
+            <MapaPoligonos
+              municipios={municipios}
+              onSeleccionar={(mun) => setActivo(mun)}
+            />
+            {activo && (
+              <div style={{ position: 'absolute', inset: 0, zIndex: 1000 }}>
+                <PanelMunicipio
+                  mun={activo}
+                  usuario={usuario}
+                  onClose={() => setActivo(null)}
+                  onVotado={async () => {
+                    const { data } = await getMunicipios();
+                    if (data) {
+                      setMunicipios(data);
+                      const updated = data.find(m => m.id === activo.id);
+                      if (updated) setActivo(updated);
+                    }
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "center" }}>
+            {[[T.green, "≥ 4.0 Favorable"], [T.yellow, "3–3.9 Moderado"], [T.red, "< 3.0 Difícil"]].map(([c, l]) => (
+              <div key={l} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 10, height: 10, borderRadius: "50%", background: c }} />
+                <span style={{ fontSize: 12, color: T.textMid }}>{l}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* VISTA: NOTICIAS */}
