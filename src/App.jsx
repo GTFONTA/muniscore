@@ -22,6 +22,7 @@ import {
   yaVoto,
   getComentariosPublicos,
   enviarContacto,
+  getMesesPromedio,
 } from './lib/supabase';
 import MapaPoligonos from './components/MapaPoligonos';
 import NoticiasCarrusel from './components/NoticiasCarrusel';
@@ -151,6 +152,137 @@ const BtnGhost = ({ children, onClick }) => (
 const Skeleton = ({ w = "100%", h = 16, radius = 8 }) => (
   <div style={{ width: w, height: h, borderRadius: radius, background: `linear-gradient(90deg, ${T.bgMuted} 25%, ${T.border} 50%, ${T.bgMuted} 75%)`, backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }} />
 );
+
+// ─────────────────────────────────────────────
+//  RANKING
+// ─────────────────────────────────────────────
+const CATEGORIAS_RANKING = [
+  { key: "global",         label: "Índice Ponderado",                       campo: "puntaje_global",         invertir: false },
+  { key: "transparencia",  label: "Transparencia y ausencia de corrupción", campo: "puntaje_transparencia",  invertir: false },
+  { key: "velocidad",      label: "Velocidad de aprobación",                campo: "puntaje_velocidad",      invertir: false },
+  { key: "normativa",      label: "Claridad y accesibilidad normativa",     campo: "puntaje_normativa",      invertir: false },
+  { key: "previsibilidad", label: "Previsibilidad y consistencia",          campo: "puntaje_previsibilidad", invertir: false },
+  { key: "atencion",       label: "Atención al público",                    campo: "puntaje_atencion",       invertir: false },
+  { key: "impuestos",      label: "Razonabilidad de tasas y aranceles",     campo: "puntaje_impuestos",      invertir: false },
+  { key: "meses",          label: "Meses promedio de demora en aprobación", campo: null,                     invertir: true  },
+];
+
+const VistaRanking = ({ municipios, onRefresh }) => {
+  const [categoria, setCategoria] = useState("global");
+  const [mesesData, setMesesData] = useState([]);
+  const [ultimaAct, setUltimaAct] = useState(new Date());
+
+  const cargarMeses = useCallback(async () => {
+    const data = await getMesesPromedio();
+    setMesesData(data);
+    setUltimaAct(new Date());
+  }, []);
+
+  useEffect(() => {
+    cargarMeses();
+    const interval = setInterval(() => { cargarMeses(); if (onRefresh) onRefresh(); }, 60000);
+    return () => clearInterval(interval);
+  }, [cargarMeses, onRefresh]);
+
+  const catConfig = CATEGORIAS_RANKING.find(c => c.key === categoria);
+  const isMeses   = categoria === "meses";
+  const maxMeses  = mesesData.length ? Math.max(...mesesData.map(d => d.meses_promedio)) : 1;
+
+  const buildRows = (mejores) => {
+    if (isMeses) {
+      return [...mesesData]
+        .sort((a, b) => mejores ? a.meses_promedio - b.meses_promedio : b.meses_promedio - a.meses_promedio)
+        .slice(0, 10)
+        .map(d => {
+          const mun = municipios.find(m => m.id === d.municipio_id);
+          return { nombre: mun?.nombre || "—", valor: d.meses_promedio, votos: d.count };
+        });
+    }
+    return municipios
+      .filter(m => (m.total_votos || 0) >= 3 && (m[catConfig.campo] || 0) > 0)
+      .sort((a, b) => mejores ? b[catConfig.campo] - a[catConfig.campo] : a[catConfig.campo] - b[catConfig.campo])
+      .slice(0, 10)
+      .map(m => ({ nombre: m.nombre, valor: m[catConfig.campo], votos: m.total_votos }));
+  };
+
+  const top10  = buildRows(true);
+  const peor10 = buildRows(false);
+
+  const FilaRanking = ({ pos, nombre, valor, votos, esMejores }) => {
+    const barColor = isMeses
+      ? (esMejores ? T.green : T.red)
+      : getScore(valor).c;
+    const barSoft = isMeses
+      ? (esMejores ? T.greenSoft : T.redSoft)
+      : getScore(valor).soft;
+    const barWidth = isMeses
+      ? `${Math.min((valor / maxMeses) * 100, 100).toFixed(1)}%`
+      : `${Math.min((valor / 5) * 100, 100).toFixed(1)}%`;
+    const valorStr = isMeses
+      ? `${valor.toFixed(1)} meses`
+      : `${valor.toFixed(1)} / 5`;
+
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: `1px solid ${T.border}` }}>
+        <span style={{ width: 24, textAlign: "right", fontSize: 13, fontWeight: 700, color: T.textLight, flexShrink: 0 }}>{pos}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nombre}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: barColor, marginLeft: 8, flexShrink: 0 }}>{valorStr}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ flex: 1, height: 6, borderRadius: 99, background: barSoft, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: barWidth, borderRadius: 99, background: barColor, transition: "width 0.4s ease" }} />
+            </div>
+            <span style={{ fontSize: 10, color: T.textLight, flexShrink: 0 }}>{votos} eval.</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const TablaRanking = ({ titulo, filas, esMejores }) => (
+    <div style={{ flex: 1, background: T.bg, borderRadius: T.radiusXl, border: `1px solid ${T.border}`, padding: "24px 24px 16px", boxShadow: T.shadowCard }}>
+      <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 800, color: T.text }}>{titulo}</h3>
+      {filas.length === 0
+        ? <p style={{ fontSize: 13, color: T.textLight, textAlign: "center", padding: "24px 0" }}>Sin datos suficientes aún</p>
+        : filas.map((f, i) => <FilaRanking key={i} pos={i + 1} nombre={f.nombre} valor={f.valor} votos={f.votos} esMejores={esMejores} />)
+      }
+      <p style={{ margin: "12px 0 0", fontSize: 11, color: T.textLight, fontStyle: "italic" }}>Solo se muestran municipios con 3 o más evaluaciones</p>
+    </div>
+  );
+
+  return (
+    <div style={{ flex: 1, width: "100%", padding: "48px 32px", animation: "fadeUp 0.25s ease" }}>
+      <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Índice AMBA</p>
+      <h1 style={{ margin: "0 0 8px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.7 }}>
+        Ranking de <span style={{ color: T.orange }}>municipios</span>
+      </h1>
+      <p style={{ fontSize: 15, color: T.textMid, margin: "0 0 28px" }}>Compará el desempeño de cada municipio según la categoría que más te interesa.</p>
+
+      <div style={{ marginBottom: 28 }}>
+        <select
+          value={categoria}
+          onChange={e => setCategoria(e.target.value)}
+          style={{ padding: "10px 16px", borderRadius: T.radiusSm, border: `1.5px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 14, fontFamily: "inherit", cursor: "pointer", outline: "none", minWidth: 280 }}
+        >
+          {CATEGORIAS_RANKING.map(c => (
+            <option key={c.key} value={c.key}>{c.label}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="ranking-cols">
+        <TablaRanking titulo="🏆 Top 10 — Mejores para construir" filas={top10} esMejores={true} />
+        <TablaRanking titulo="⚠️ Peores 10 — Mayor dificultad" filas={peor10} esMejores={false} />
+      </div>
+
+      <p style={{ marginTop: 16, fontSize: 11, color: T.textLight, textAlign: "right" }}>
+        Última actualización: {ultimaAct.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+      </p>
+    </div>
+  );
+};
 
 // ─────────────────────────────────────────────
 //  MODAL DE ENCUESTA
@@ -542,6 +674,11 @@ export default function App() {
   const [contactoEnviado, setContactoEnviado]   = useState(false);
   const [errorContacto, setErrorContacto]       = useState(null);
 
+  const refreshMunicipios = useCallback(async () => {
+    const { data } = await getMunicipios();
+    if (data) setMunicipios(data);
+  }, []);
+
   // Carga inicial de datos
   useEffect(() => {
     const cargarDatos = async () => {
@@ -598,9 +735,11 @@ export default function App() {
       .nav-links { display:flex; gap:0; align-items:center; }
       .nav-cta   { display:flex; align-items:center; }
       .nav-hamburger { display:none; background:none; border:none; font-size:22px; cursor:pointer; color:${T.text}; padding:8px; line-height:1; }
+      .ranking-cols { display:flex; gap:24px; align-items:flex-start; }
       @media (max-width:768px) {
         .nav-links, .nav-cta { display:none !important; }
         .nav-hamburger { display:block !important; }
+        .ranking-cols { flex-direction:column; }
       }
       .hero-bar {
         width: 100%;
@@ -655,7 +794,7 @@ export default function App() {
         </div>
 
         <div className="nav-links">
-          {[["mapa", "Mapa"], ["noticias", "Noticias"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
+          {[["mapa", "Mapa"], ["ranking", "Ranking"], ["noticias", "Noticias"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
             <button key={v} onClick={() => setVista(v)} style={{ background: "none", border: "none", padding: "22px 16px", cursor: "pointer", borderBottom: vista === v ? `2px solid ${T.orange}` : "2px solid transparent", color: vista === v ? T.text : T.textMid, fontWeight: vista === v ? 700 : 500, fontSize: 14, fontFamily: "inherit" }}>{l}</button>
           ))}
         </div>
@@ -682,7 +821,7 @@ export default function App() {
       {/* Menú desplegable mobile */}
       {menuAbierto && (
         <div style={{ position: "fixed", top: 62, left: 0, right: 0, background: T.bg, borderBottom: `1px solid ${T.border}`, padding: "12px 24px 20px", display: "flex", flexDirection: "column", gap: 0, zIndex: 999, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}>
-          {[["mapa", "Mapa"], ["noticias", "Noticias"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
+          {[["mapa", "Mapa"], ["ranking", "Ranking"], ["noticias", "Noticias"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
             <button key={v} onClick={() => { setVista(v); setMenuAbierto(false); }} style={{ background: "none", border: "none", textAlign: "left", padding: "13px 0", cursor: "pointer", borderBottom: `1px solid ${T.border}`, color: vista === v ? T.orange : T.text, fontWeight: vista === v ? 700 : 500, fontSize: 15, fontFamily: "inherit" }}>{l}</button>
           ))}
           <div style={{ marginTop: 14 }}>
@@ -791,6 +930,11 @@ export default function App() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* VISTA: RANKING */}
+      {vista === "ranking" && (
+        <VistaRanking municipios={municipios} onRefresh={refreshMunicipios} />
       )}
 
       {/* VISTA: NOTICIAS */}

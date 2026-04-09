@@ -255,3 +255,28 @@ export async function getDocumentos(municipioId) {
   if (error) console.error('Error al cargar documentos:', error.message);
   return { data, error };
 }
+
+// ── Meses promedio de aprobación por municipio ───────────────
+export async function getMesesPromedio() {
+  const { data, error } = await supabase
+    .from('encuestas')
+    .select('municipio_id, meses_aprobacion')
+    .not('meses_aprobacion', 'is', null)
+    .eq('validado', true);
+
+  if (error || !data) return [];
+
+  const grouped = {};
+  data.forEach(({ municipio_id, meses_aprobacion }) => {
+    if (!grouped[municipio_id]) grouped[municipio_id] = [];
+    grouped[municipio_id].push(meses_aprobacion);
+  });
+
+  return Object.entries(grouped)
+    .filter(([, vals]) => vals.length >= 3)
+    .map(([municipio_id, vals]) => ({
+      municipio_id,
+      meses_promedio: vals.reduce((a, b) => a + b, 0) / vals.length,
+      count: vals.length,
+    }));
+}
