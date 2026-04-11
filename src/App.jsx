@@ -43,7 +43,7 @@ const T = {
   orange:      "#E8612A",
   orangeSoft:  "#FDF1EC",
   orangeMid:   "#F5CDB8",
-  green:       "#00A699",
+  green:       "#007A70",
   greenSoft:   "#E6F6F5",
   greenMid:    "#A0DDD9",
   blue:        "#0066CC",
@@ -137,8 +137,8 @@ const BtnPrimary = ({ children, onClick, full, disabled, style: extra }) => (
     boxShadow: disabled ? "none" : `0 4px 18px ${T.orange}44`,
     transition: "all 0.15s", ...extra,
   }}
-    onMouseEnter={e => !disabled && (e.currentTarget.style.transform = "translateY(-1px)")}
-    onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+    onMouseEnter={e => !disabled && (e.currentTarget.style.transform = "translateY(-2px) scale(1.04)")}
+    onMouseLeave={e => e.currentTarget.style.transform = "translateY(0) scale(1)"}
   >{children}</button>
 );
 
@@ -367,7 +367,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
     <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 10 }}>
       {[1, 2, 3, 4, 5].map(n => (
         <button key={n} onClick={() => setPts(p => ({ ...p, [campo]: n }))} style={{
-          width: 42, height: 42, borderRadius: T.radiusSm, cursor: "pointer",
+          width: 44, height: 44, borderRadius: T.radiusSm, cursor: "pointer",
           border: `1.5px solid ${n <= val ? T.orange : T.border}`,
           background: n <= val ? T.orangeSoft : T.bgWarm,
           color: n <= val ? T.orange : T.textLight,
@@ -396,7 +396,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
                 {paso === 2 ? "¡Gracias por tu aporte!" : `Calificar ${mun.nombre}`}
               </h2>
             </div>
-            <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${T.border}`, background: T.bg, cursor: "pointer", fontSize: 16, color: T.textLight }}>✕</button>
+            <button onClick={onClose} style={{ width: 44, height: 44, borderRadius: "50%", border: `1.5px solid ${T.border}`, background: T.bg, cursor: "pointer", fontSize: 16, color: T.textLight }}>✕</button>
           </div>
           {paso === 1 && (
             <div style={{ display: "flex", gap: 5, marginTop: 18 }}>
@@ -525,11 +525,11 @@ const PanelMunicipio = ({ mun, usuario, onClose, onVotado }) => {
 
   if (!mun.id) {
     return (
-      <div style={{ position: "absolute", top: 0, right: 0, width: 380, height: "100%", background: T.bg, borderLeft: `1px solid ${T.border}`, display: "flex", flexDirection: "column", zIndex: 20, boxShadow: "-12px 0 48px rgba(0,0,0,0.09)", animation: "slideIn 0.22s ease" }}>
+      <div style={{ position: "absolute", top: 0, right: 0, width: 380, height: "100%", background: "rgba(255,255,255,0.85)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", borderLeft: "1px solid rgba(255,255,255,0.6)", display: "flex", flexDirection: "column", zIndex: 20, boxShadow: "-12px 0 48px rgba(0,0,0,0.12)", animation: "slideIn 0.22s ease" }}>
         <div style={{ padding: "26px 26px 20px", borderBottom: `1px solid ${T.border}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>{mun.nombre}</h2>
-            <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: "50%", border: `1.5px solid ${T.border}`, background: T.bg, color: T.textLight, cursor: "pointer", fontSize: 14 }}>✕</button>
+            <button onClick={onClose} style={{ width: 44, height: 44, borderRadius: "50%", border: `1.5px solid ${T.border}`, background: T.bg, color: T.textLight, cursor: "pointer", fontSize: 14 }}>✕</button>
           </div>
         </div>
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 32, textAlign: "center" }}>
@@ -545,7 +545,7 @@ const PanelMunicipio = ({ mun, usuario, onClose, onVotado }) => {
   }
 
   return (
-    <div style={{ position: "absolute", top: 0, right: 0, width: 380, height: "100%", background: T.bg, borderLeft: `1px solid ${T.border}`, display: "flex", flexDirection: "column", zIndex: 20, boxShadow: "-12px 0 48px rgba(0,0,0,0.09)", animation: "slideIn 0.22s ease" }}>
+    <div style={{ position: "absolute", top: 0, right: 0, width: 380, height: "100%", background: "rgba(255,255,255,0.85)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", borderLeft: "1px solid rgba(255,255,255,0.6)", display: "flex", flexDirection: "column", zIndex: 20, boxShadow: "-12px 0 48px rgba(0,0,0,0.12)", animation: "slideIn 0.22s ease" }}>
 
       {/* Header */}
       <div style={{ padding: "26px 26px 20px", background: `linear-gradient(160deg, ${soft} 0%, #fff 100%)`, borderBottom: `1px solid ${T.border}` }}>
@@ -554,7 +554,7 @@ const PanelMunicipio = ({ mun, usuario, onClose, onVotado }) => {
             <p style={{ margin: "0 0 4px", fontSize: 11, color: T.textLight, letterSpacing: 2, textTransform: "uppercase" }}>{mun.region}</p>
             <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>{mun.nombre}</h2>
           </div>
-          <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: "50%", border: `1.5px solid ${T.border}`, background: T.bg, color: T.textLight, cursor: "pointer", fontSize: 14 }}>✕</button>
+          <button onClick={onClose} style={{ width: 44, height: 44, borderRadius: "50%", border: `1.5px solid ${T.border}`, background: T.bg, color: T.textLight, cursor: "pointer", fontSize: 14 }}>✕</button>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 18 }}>
           <Badge s={mun.puntaje_global} size={66} />
@@ -666,6 +666,7 @@ export default function App() {
   const [cargando, setCargando]     = useState(true);
   const [mostrarModalCalificar, setMostrarModalCalificar] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
   // Tarea 4 — comentarios comunidad en Noticias
   const [comentariosComunidad, setComentariosComunidad] = useState([]);
   const [cargandoComments, setCargandoComments]         = useState(false);
@@ -877,22 +878,24 @@ export default function App() {
               </p>
             </div>
           </div>
-          {/* Stats */}
-          <div style={{ background: T.bg, borderBottom: `1px solid ${T.border}`, padding: "18px 48px", display: "flex", gap: 48, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
-            {cargando
-              ? [1,2,3,4].map(i => <Skeleton key={i} w={120} h={40} />)
-              : [
-                  { label: "Promedio AMBA",    val: prom + " / 5.0",  col: getScore(parseFloat(prom)).c },
-                  { label: "Evaluaciones",     val: totalVotos,        col: T.blue },
-                  { label: "Mejor índice",     val: mejor?.nombre,     col: T.green },
-                  { label: "Mayor dificultad", val: peor?.nombre,      col: T.red },
-                ].map((s, i) => (
-                  <div key={i}>
-                    <p style={{ margin: 0, fontSize: 12, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>{s.label}</p>
-                    <p style={{ margin: "3px 0 0", fontSize: 24, fontWeight: 800, color: s.col }}>{s.val || "—"}</p>
-                  </div>
-                ))
-            }
+          {/* Stats — Bento Grid */}
+          <div style={{ background: T.bgWarm, borderBottom: `1px solid ${T.border}`, padding: "16px 48px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, maxWidth: 1440, margin: "0 auto" }}>
+              {cargando
+                ? [1,2,3,4].map(i => <Skeleton key={i} w="100%" h={80} radius={16} />)
+                : [
+                    { label: "Promedio AMBA",    val: prom + " / 5.0",  col: getScore(parseFloat(prom)).c },
+                    { label: "Evaluaciones",     val: totalVotos,        col: T.blue },
+                    { label: "Mejor índice",     val: mejor?.nombre,     col: T.green },
+                    { label: "Mayor dificultad", val: peor?.nombre,      col: T.red },
+                  ].map((s, i) => (
+                    <div key={i} style={{ borderRadius: 16, background: T.bg, boxShadow: T.shadowCard, padding: "18px 22px", border: `1px solid ${T.border}`, display: "flex", flexDirection: "column", gap: 5 }}>
+                      <p style={{ margin: 0, fontSize: 11, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>{s.label}</p>
+                      <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: s.col, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.val || "—"}</p>
+                    </div>
+                  ))
+              }
+            </div>
           </div>
           {/* CTA */}
           <div style={{ display: "flex", justifyContent: "center", margin: "1rem 0" }}>
@@ -923,13 +926,30 @@ export default function App() {
               </div>
             )}
           </div>
-          <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "center" }}>
+          {/* Leyenda — desktop */}
+          <div className="legend-desktop" style={{ gap: 14, alignItems: "center", justifyContent: "center", padding: "10px 0" }}>
             {[[T.green, "≥ 4.0 Favorable"], [T.yellow, "3–3.9 Moderado"], [T.red, "< 3.0 Difícil"]].map(([c, l]) => (
               <div key={l} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ width: 10, height: 10, borderRadius: "50%", background: c }} />
                 <span style={{ fontSize: 12, color: T.textMid }}>{l}</span>
               </div>
             ))}
+          </div>
+          {/* Leyenda — mobile bottom sheet */}
+          <div className="legend-bottom-sheet" style={{ transform: legendOpen ? "translateY(0)" : "translateY(calc(100% - 44px))" }}>
+            <div onClick={() => setLegendOpen(o => !o)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "12px 24px", cursor: "pointer", minHeight: 44 }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: T.borderMid }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: T.textMid }}>Leyenda del mapa</span>
+              <span style={{ fontSize: 11, color: T.textLight }}>{legendOpen ? "▼" : "▲"}</span>
+            </div>
+            <div style={{ display: "flex", gap: 20, alignItems: "center", justifyContent: "center", padding: "4px 24px 20px", flexWrap: "wrap" }}>
+              {[[T.green, "≥ 4.0 Favorable"], [T.yellow, "3–3.9 Moderado"], [T.red, "< 3.0 Difícil"]].map(([c, l]) => (
+                <div key={l} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: c }} />
+                  <span style={{ fontSize: 13, color: T.textMid }}>{l}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -1177,6 +1197,26 @@ export default function App() {
           )}
         </div>
       )}
+
+      {/* FAB — Calificar municipio (solo mobile) */}
+      <button
+        className="fab-mobile"
+        onClick={() => setMostrarModalCalificar(true)}
+        title="Calificar municipio"
+        style={{
+          position: "fixed", bottom: 80, right: 24,
+          width: 56, height: 56, borderRadius: "50%",
+          background: T.orange, color: "#fff", fontSize: 22,
+          boxShadow: `0 4px 20px ${T.orange}88`,
+          zIndex: 1100, border: "none", cursor: "pointer",
+          alignItems: "center", justifyContent: "center",
+          fontFamily: "inherit",
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          lineHeight: 1,
+        }}
+        onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.12)"; }}
+        onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+      >★</button>
 
       {/* FOOTER */}
       <footer style={{ borderTop: `1px solid ${T.border}`, padding: "20px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", background: T.bg, fontSize: 13, color: T.textLight, flexWrap: "wrap", gap: 12 }}>

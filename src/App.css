@@ -161,6 +161,75 @@
   }
 }
 
+/* ── FAB — Calificar municipio (solo mobile) ── */
+.fab-mobile {
+  display: none !important;
+}
+@media (max-width: 768px) {
+  .fab-mobile {
+    display: flex !important;
+  }
+}
+
+/* ── Map touch overlay ── */
+.map-touch-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.32);
+  cursor: pointer;
+}
+.map-touch-overlay span {
+  background: rgba(255, 255, 255, 0.96);
+  padding: 12px 22px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1A1A1A;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  max-width: 260px;
+  line-height: 1.4;
+}
+
+/* ── Leyenda desktop / mobile bottom sheet ── */
+.legend-desktop {
+  display: flex;
+}
+.legend-bottom-sheet {
+  display: none;
+}
+@media (max-width: 768px) {
+  .legend-desktop {
+    display: none;
+  }
+  .legend-bottom-sheet {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 850;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.93);
+    border-top: 1px solid rgba(232, 228, 223, 0.7);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.10);
+    border-radius: 16px 16px 0 0;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* ── Ranking rows hover ── */
+.ranking-row-hover:hover {
+  background: #FDF1EC;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
 .ticks {
   position: relative;
   width: 100%;

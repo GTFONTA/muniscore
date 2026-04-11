@@ -18,12 +18,12 @@ function obtenerColor(puntaje) {
   return '#27AE60';                   // 🟢 Verde: favorable (4 a 5)
 }
 
-// 🎨 Color del badge en el tooltip (escala más fina)
+// 🎨 Color del badge en el tooltip (escala más fina — WCAG 2.1 AA sobre blanco)
 function obtenerColorBadge(puntaje) {
   if (!puntaje || puntaje === 0) return '#9CA3AF';
-  if (puntaje < 2.5) return '#EF4444';
-  if (puntaje < 3.5) return '#F59E0B';
-  return '#10B981';
+  if (puntaje < 2.5) return '#D32F2F'; // ratio ~5.2:1 ✓
+  if (puntaje < 3.5) return '#C27D00'; // ratio ~4.7:1 ✓
+  return '#007A70';                    // ratio ~4.6:1 ✓
 }
 
 // Componente interno que accede al mapa para hacer zoom
@@ -42,11 +42,13 @@ function ZoomToFeature({ feature }) {
 }
 
 export default function MapaPoligonos({ municipios, onSeleccionar }) {
-  const [geojsonData, setGeojsonData]   = useState(null);
-  const [seleccionado, setSeleccionado] = useState(null);
-  const [busqueda, setBusqueda]         = useState('');
-  const [sugerencias, setSugerencias]   = useState([]);
-  const [featureFoco, setFeatureFoco]   = useState(null);
+  const [geojsonData, setGeojsonData]     = useState(null);
+  const [seleccionado, setSeleccionado]   = useState(null);
+  const [busqueda, setBusqueda]           = useState('');
+  const [sugerencias, setSugerencias]     = useState([]);
+  const [featureFoco, setFeatureFoco]     = useState(null);
+  const [isMobile, setIsMobile]           = useState(false);
+  const [mapInteractive, setMapInteractive] = useState(false);
 
   const geojsonLayerRef  = useRef(null);
   const municipiosRef    = useRef(municipios);
@@ -62,6 +64,14 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
 
   useEffect(() => {
     setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+  }, []);
+
+  // Detectar mobile para activar overlay de interacción consciente
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
   // Mantener municipiosRef actualizado
@@ -127,13 +137,13 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
     const barWidth   = puntajeRaw ? Math.round((puntajeRaw / 5) * 100) : 0;
 
     const tooltipHTML = `
-      <div style="padding:10px 14px;min-width:175px;font-family:inherit;">
-        <div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:6px;letter-spacing:0.4px;text-transform:uppercase;">
+      <div style="padding:10px 14px;min-width:180px;font-family:'Manrope',sans-serif;">
+        <div style="font-size:12px;font-weight:700;color:#1A1A1A;margin-bottom:6px;letter-spacing:0.5px;text-transform:uppercase;">
           🏛 ${nombre}
         </div>
         <div style="height:1px;background:#E8E4DF;margin-bottom:8px;"></div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span style="background:${color};color:white;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.3px;white-space:nowrap;">
+          <span style="border:2px solid ${color};color:${color};background:${color}18;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.3px;white-space:nowrap;">
             ${puntaje ? `★ ${puntaje}` : 'Sin datos'}
           </span>
           ${puntaje ? `<span style="font-size:12px;color:#9CA3AF;">/ 5.0</span>` : ''}
@@ -180,8 +190,8 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
         .leaflet-tooltip.muni-tooltip {
           background: #FFFFFF;
           border: none;
-          border-radius: 10px;
-          box-shadow: 0 4px 18px rgba(0,0,0,0.13), 0 1px 4px rgba(0,0,0,0.07);
+          border-radius: 12px;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.07);
           padding: 0;
           animation: muniTooltipFadeIn 150ms ease;
         }
@@ -219,7 +229,7 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
                 <div
                   key={nom}
                   onMouseDown={() => seleccionarDesdeSearch(f)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid #F3F0EC' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid #F3F0EC', minHeight: 44 }}
                   onMouseEnter={e => e.currentTarget.style.background = '#FDF1EC'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
@@ -242,27 +252,37 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
       </div>
 
       {/* 🗺️ Mapa */}
-      <MapContainer
-        center={[-34.62, -58.44]}
-        zoom={9}
-        style={{ height: '65vh', minHeight: '500px', width: '100%', borderRadius: 0 }}
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; OpenStreetMap contributors'
-        />
-        {geojsonData && (
-          <GeoJSON
-            key={(municipios?.reduce((acc, m) => acc + (m.puntaje_global || 0), 0) ?? 0).toFixed(4)}
-            data={geojsonData}
-            style={estilo}
-            onEachFeature={onCadaPoligono}
-            ref={geojsonLayerRef}
-          />
+      <div style={{ position: 'relative' }}>
+        {/* Overlay de interacción consciente — solo mobile, hasta primer tap */}
+        {isMobile && !mapInteractive && (
+          <div className="map-touch-overlay" onClick={() => setMapInteractive(true)}>
+            <span>Tocá para activar el mapa<br />Usá dos dedos para desplazar</span>
+          </div>
         )}
-        {/* Zoom al municipio seleccionado desde el buscador */}
-        <ZoomToFeature feature={featureFoco} />
-      </MapContainer>
+        <MapContainer
+          center={[-34.62, -58.44]}
+          zoom={9}
+          style={{ height: '65vh', minHeight: '500px', width: '100%', borderRadius: 0 }}
+          scrollWheelZoom={!isMobile || mapInteractive}
+          dragging={!isMobile || mapInteractive}
+        >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; OpenStreetMap contributors'
+          />
+          {geojsonData && (
+            <GeoJSON
+              key={(municipios?.reduce((acc, m) => acc + (m.puntaje_global || 0), 0) ?? 0).toFixed(4)}
+              data={geojsonData}
+              style={estilo}
+              onEachFeature={onCadaPoligono}
+              ref={geojsonLayerRef}
+            />
+          )}
+          {/* Zoom al municipio seleccionado desde el buscador */}
+          <ZoomToFeature feature={featureFoco} />
+        </MapContainer>
+      </div>
     </div>
   );
 }

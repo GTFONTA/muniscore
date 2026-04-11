@@ -105,3 +105,11 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* ── Contenedor de ancho máximo — Desktop ── */
+.container-max {
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
