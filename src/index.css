@@ -113,3 +113,24 @@ code {
   width: 100%;
   box-sizing: border-box;
 }
+
+/* ── C3: OSM attribution — no tapar con legend bottom sheet handle (44px) ── */
+@media (max-width: 768px) {
+  .leaflet-bottom {
+    padding-bottom: 44px;
+  }
+}
+
+/* ── C4: Heading Metodología — responsive font-size ── */
+@media (max-width: 768px) {
+  .metodologia-heading { font-size: 34px !important; line-height: 1.25 !important; }
+}
+@media (max-width: 400px) {
+  .metodologia-heading { font-size: 28px !important; }
+}
+
+/* ── I4: Featured article — layout columna en mobile ── */
+@media (max-width: 768px) {
+  .featured-article { flex-direction: column !important; }
+  .featured-article-image { width: 100% !important; min-height: 200px; }
+}

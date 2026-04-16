@@ -257,7 +257,8 @@ const VistaRanking = ({ municipios, onRefresh }) => {
       <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
         <p style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Índice AMBA</p>
         <h1 style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>
-          Ranking de <span style={{ color: T.orange }}>municipios</span>
+          <span style={{ whiteSpace: "nowrap" }}>Ranking de</span>{' '}
+          <span style={{ color: T.orange }}>municipios</span>
         </h1>
         <p style={{ fontSize: 17, color: T.textMid, margin: "0 0 28px" }}>Compará el desempeño de cada municipio según la categoría que más te interesa.</p>
       </div>
@@ -792,7 +793,7 @@ export default function App() {
           <img src="/logo-icono.png" alt="MuniLupa ícono" style={{ height: "48px", width: "auto", objectFit: "contain" }} />
           <div>
             <div style={{ fontSize: 21, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>Muni<span style={{ color: T.orange }}>lupa</span></div>
-            <div style={{ fontSize: 10, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>Gestión Municipal a la vista</div>
+            <div style={{ fontSize: 10, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase", whiteSpace: "nowrap" }}>Gestión Municipal a la vista</div>
           </div>
         </div>
 
@@ -978,8 +979,8 @@ export default function App() {
                   {articulos.find(a => a.destacado) && (() => {
                     const dest = articulos.find(a => a.destacado);
                     return (
-                      <div style={{ display: "flex", borderRadius: T.radiusXl, overflow: "hidden", background: T.bg, boxShadow: T.shadowHover, border: `1px solid ${T.border}`, marginBottom: 32, cursor: "pointer" }}>
-                        {dest.imagen_url && <div style={{ width: "42%", flexShrink: 0, overflow: "hidden", minHeight: 280 }}><img src={dest.imagen_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => e.target.style.display = "none"} /></div>}
+                      <div className="featured-article" style={{ display: "flex", borderRadius: T.radiusXl, overflow: "hidden", background: T.bg, boxShadow: T.shadowHover, border: `1px solid ${T.border}`, marginBottom: 32, cursor: "pointer" }}>
+                        {dest.imagen_url && <div className="featured-article-image" style={{ width: "42%", flexShrink: 0, overflow: "hidden", minHeight: 280 }}><img src={dest.imagen_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => e.target.style.display = "none"} /></div>}
                         <div style={{ padding: "36px 40px" }}>
                           <Pill label="DESTACADO" color={T.orange} />
                           <h2 style={{ margin: "14px 0 14px", fontSize: 24, fontWeight: 800, color: T.text, lineHeight: 1.35 }}>{dest.titulo}</h2>
@@ -1071,7 +1072,7 @@ export default function App() {
         <div style={{ flex: 1, width: "100%", padding: "52px 48px", animation: "fadeUp 0.25s ease" }}>
           <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
             <p style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Transparencia</p>
-            <h1 style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>Metodología & <span style={{ color: T.orange }}>Privacidad</span></h1>
+            <h1 className="metodologia-heading" style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1, lineHeight: 1.2 }}>Metodología & <span style={{ color: T.orange }}>Privacidad</span></h1>
             <p style={{ fontSize: 17, color: T.textMid, marginBottom: 36, lineHeight: 1.7 }}>Munilupa es una herramienta de inteligencia colectiva. Los índices reflejan la experiencia de los usuarios, no la posición de ninguna organización ni partido político.</p>
           </div>
           <div style={{ maxWidth: 860, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
@@ -1081,8 +1082,8 @@ export default function App() {
               { icon: "🛡️", titulo: "¿Cómo se evitan votos duplicados?", texto: "Cada email puede votar una sola vez por municipio. El sistema valida el email antes de registrar el voto." },
               { icon: "🔒", titulo: "Privacidad de tus datos", texto: "Almacenamos únicamente el hash de tu email, la fecha del voto y los puntajes. Cumplimos con la Ley 25.326 de Protección de Datos Personales de la República Argentina." },
             ].map((s, i) => (
-              <div key={i} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "28px 36px", display: "flex", alignItems: "center", gap: 22, boxShadow: T.shadowCard }}>
-                <div style={{ fontSize: 32, width: 48, flexShrink: 0, textAlign: "center" }}>{s.icon}</div>
+              <div key={i} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "28px 36px", display: "flex", alignItems: "flex-start", gap: 22, boxShadow: T.shadowCard }}>
+                <div style={{ fontSize: 32, width: 48, flexShrink: 0, textAlign: "center", marginTop: 2 }}>{s.icon}</div>
                 <div style={{ flex: 1, textAlign: "left" }}>
                   <p style={{ margin: "0 0 8px", fontSize: 19, fontWeight: 700, color: T.text }}>{s.titulo}</p>
                   <p style={{ margin: 0, fontSize: 15, color: T.textMid, lineHeight: 1.7 }}>{s.texto}</p>
@@ -1108,7 +1109,7 @@ export default function App() {
           <h1 style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>
             <span style={{ color: T.orange }}>Contacto</span>
           </h1>
-          <p style={{ fontSize: 17, color: T.textMid, margin: "0 0 36px", lineHeight: 1.7 }}>
+          <p style={{ fontSize: 17, color: T.textMid, margin: "0 0 36px", lineHeight: 1.7, textAlign: "center" }}>
             ¿Encontraste un error, querés dar feedback o hablar de patrocinios? Completá el formulario y te respondemos.
           </p>
 
@@ -1176,8 +1177,12 @@ export default function App() {
                 </div>
                 <BtnPrimary
                   full
-                  disabled={enviandoContacto || !contactForm.nombre || !contactForm.email || !contactForm.tipoConsulta || !contactForm.mensaje}
+                  disabled={enviandoContacto}
                   onClick={async () => {
+                    if (!contactForm.nombre || !contactForm.email || !contactForm.tipoConsulta || !contactForm.mensaje) {
+                      setErrorContacto("Por favor completá todos los campos.");
+                      return;
+                    }
                     setEnviandoContacto(true); setErrorContacto(null);
                     const { error } = await enviarContacto({
                       nombre:       contactForm.nombre,
@@ -1198,8 +1203,8 @@ export default function App() {
         </div>
       )}
 
-      {/* FAB — Calificar municipio (solo mobile) */}
-      <button
+      {/* FAB — Calificar municipio (solo mobile, oculto en Contacto para no tapar el formulario) */}
+      {vista !== "contacto" && <button
         className="fab-mobile"
         onClick={() => setMostrarModalCalificar(true)}
         title="Calificar municipio"
@@ -1216,7 +1221,7 @@ export default function App() {
         }}
         onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.12)"; }}
         onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
-      >★</button>
+      >★</button>}
 
       {/* FOOTER */}
       <footer style={{ borderTop: `1px solid ${T.border}`, padding: "20px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", background: T.bg, fontSize: 13, color: T.textLight, flexWrap: "wrap", gap: 12 }}>
