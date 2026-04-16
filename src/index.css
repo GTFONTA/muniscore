@@ -114,12 +114,6 @@ code {
   box-sizing: border-box;
 }
 
-/* ── C3: OSM attribution — no tapar con legend bottom sheet handle (44px) ── */
-@media (max-width: 768px) {
-  .leaflet-bottom {
-    padding-bottom: 44px;
-  }
-}
 
 /* ── C4: Heading Metodología — responsive font-size ── */
 @media (max-width: 768px) {

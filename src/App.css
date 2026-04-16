@@ -195,33 +195,6 @@
   line-height: 1.4;
 }
 
-/* ── Leyenda desktop / mobile bottom sheet ── */
-.legend-desktop {
-  display: flex;
-}
-.legend-bottom-sheet {
-  display: none;
-}
-@media (max-width: 768px) {
-  .legend-desktop {
-    display: none;
-  }
-  .legend-bottom-sheet {
-    display: block;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 850;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.93);
-    border-top: 1px solid rgba(232, 228, 223, 0.7);
-    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.10);
-    border-radius: 16px 16px 0 0;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-}
 
 /* ── Ranking rows hover ── */
 .ranking-row-hover:hover {

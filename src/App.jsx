@@ -686,7 +686,6 @@ export default function App() {
   const [cargando, setCargando]     = useState(true);
   const [mostrarModalCalificar, setMostrarModalCalificar] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
-  const [legendOpen, setLegendOpen] = useState(false);
   // Tarea 4 — comentarios comunidad en Noticias
   const [comentariosComunidad, setComentariosComunidad] = useState([]);
   const [cargandoComments, setCargandoComments]         = useState(false);
@@ -949,30 +948,14 @@ export default function App() {
               </div>
             )}
           </div>
-          {/* Leyenda — desktop */}
-          <div className="legend-desktop" style={{ gap: 14, alignItems: "center", justifyContent: "center", padding: "10px 0" }}>
+          {/* Leyenda — única, centrada, siempre visible */}
+          <div style={{ display: "flex", gap: 28, alignItems: "center", justifyContent: "center", padding: "8px 0", flexWrap: "wrap" }}>
             {[[T.green, "≥ 4.0 Favorable"], [T.yellow, "3–3.9 Moderado"], [T.red, "< 3.0 Difícil"]].map(([c, l]) => (
-              <div key={l} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: c }} />
-                <span style={{ fontSize: 12, color: T.textMid }}>{l}</span>
+              <div key={l} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 20, height: 20, borderRadius: "50%", background: c, flexShrink: 0 }} />
+                <span style={{ fontSize: 24, color: T.textMid }}>{l}</span>
               </div>
             ))}
-          </div>
-          {/* Leyenda — mobile bottom sheet */}
-          <div className="legend-bottom-sheet" style={{ transform: legendOpen ? "translateY(0)" : "translateY(calc(100% - 44px))" }}>
-            <div onClick={() => setLegendOpen(o => !o)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "12px 24px", cursor: "pointer", minHeight: 44 }}>
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: T.borderMid }} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: T.textMid }}>Leyenda del mapa</span>
-              <span style={{ fontSize: 11, color: T.textLight }}>{legendOpen ? "▼" : "▲"}</span>
-            </div>
-            <div style={{ display: "flex", gap: 20, alignItems: "center", justifyContent: "center", padding: "4px 24px 20px", flexWrap: "wrap" }}>
-              {[[T.green, "≥ 4.0 Favorable"], [T.yellow, "3–3.9 Moderado"], [T.red, "< 3.0 Difícil"]].map(([c, l]) => (
-                <div key={l} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: c }} />
-                  <span style={{ fontSize: 13, color: T.textMid }}>{l}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       )}
