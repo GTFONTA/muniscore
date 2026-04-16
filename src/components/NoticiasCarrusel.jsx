@@ -122,6 +122,9 @@ export default function NoticiasCarrusel() {
           box-shadow: ${T.shadowHover} !important;
           transform: translateY(-3px);
         }
+        @media (max-width: 767px) {
+          .nc-copete { flex: 0 !important; margin-bottom: 0; }
+        }
       `}</style>
 
       <section
@@ -231,7 +234,7 @@ export default function NoticiasCarrusel() {
                   </a>
 
                   {/* Copete de redacción propia (máximo 2 oraciones) */}
-                  <p style={{ margin: 0, fontSize: 12, color: T.textMid, lineHeight: 1.65, flex: 1 }}>
+                  <p className="nc-copete" style={{ margin: 0, fontSize: 12, color: T.textMid, lineHeight: 1.65, flex: 1 }}>
                     {art.copete}
                   </p>
 

@@ -188,10 +188,28 @@ const VistaRanking = ({ municipios, onRefresh }) => {
   const isMeses   = categoria === "meses";
   const maxMeses  = mesesData.length ? Math.max(...mesesData.map(d => d.meses_promedio)) : 1;
 
-  const buildRows = (mejores) => {
+  const buildTop = () => {
     if (isMeses) {
       return [...mesesData]
-        .sort((a, b) => mejores ? a.meses_promedio - b.meses_promedio : b.meses_promedio - a.meses_promedio)
+        .sort((a, b) => a.meses_promedio - b.meses_promedio)
+        .slice(0, 10)
+        .map(d => {
+          const mun = municipios.find(m => m.id === d.municipio_id);
+          return { nombre: mun?.nombre || "—", valor: d.meses_promedio, votos: d.count, _id: d.municipio_id };
+        });
+    }
+    return municipios
+      .filter(m => (m.total_votos || 0) >= 3 && (m[catConfig.campo] || 0) > 0)
+      .sort((a, b) => b[catConfig.campo] - a[catConfig.campo])
+      .slice(0, 10)
+      .map(m => ({ nombre: m.nombre, valor: m[catConfig.campo], votos: m.total_votos, _id: m.id }));
+  };
+
+  const buildBottom = (excludeIds) => {
+    if (isMeses) {
+      return [...mesesData]
+        .sort((a, b) => b.meses_promedio - a.meses_promedio)
+        .filter(d => !excludeIds.has(d.municipio_id))
         .slice(0, 10)
         .map(d => {
           const mun = municipios.find(m => m.id === d.municipio_id);
@@ -199,14 +217,15 @@ const VistaRanking = ({ municipios, onRefresh }) => {
         });
     }
     return municipios
-      .filter(m => (m.total_votos || 0) >= 3 && (m[catConfig.campo] || 0) > 0)
-      .sort((a, b) => mejores ? b[catConfig.campo] - a[catConfig.campo] : a[catConfig.campo] - b[catConfig.campo])
+      .filter(m => (m.total_votos || 0) >= 3 && (m[catConfig.campo] || 0) > 0 && !excludeIds.has(m.id))
+      .sort((a, b) => a[catConfig.campo] - b[catConfig.campo])
       .slice(0, 10)
       .map(m => ({ nombre: m.nombre, valor: m[catConfig.campo], votos: m.total_votos }));
   };
 
-  const top10  = buildRows(true);
-  const peor10 = buildRows(false);
+  const top10     = buildTop();
+  const top10Ids  = new Set(top10.map(r => r._id));
+  const peor10    = buildBottom(top10Ids);
 
   const FilaRanking = ({ pos, nombre, valor, votos, esMejores }) => {
     const barColor = isMeses
@@ -256,7 +275,7 @@ const VistaRanking = ({ municipios, onRefresh }) => {
     <div style={{ flex: 1, width: "100%", padding: "52px 48px", animation: "fadeUp 0.25s ease" }}>
       <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
         <p style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Índice AMBA</p>
-        <h1 style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>
+        <h1 className="ranking-heading" style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>
           <span style={{ whiteSpace: "nowrap" }}>Ranking de</span>{' '}
           <span style={{ color: T.orange }}>municipios</span>
         </h1>
@@ -770,6 +789,9 @@ export default function App() {
         }
         .hero-bar h1 {
           font-size: 1.1rem !important;
+          letter-spacing: normal !important;
+          line-height: 1.3 !important;
+          word-break: break-word;
         }
       }
     `;
@@ -1091,8 +1113,8 @@ export default function App() {
               </div>
             ))}
             {/* Sponsor */}
-            <div style={{ marginTop: 18, padding: "26px 36px", borderRadius: T.radiusXl, background: `linear-gradient(135deg, ${T.orangeSoft}, #FFF)`, border: `1.5px solid ${T.orangeMid}`, display: "flex", alignItems: "center", gap: 22 }}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, boxShadow: T.shadowCard }}>🤝</div>
+            <div style={{ marginTop: 18, padding: "26px 36px", borderRadius: T.radiusXl, background: `linear-gradient(135deg, ${T.orangeSoft}, #FFF)`, border: `1.5px solid ${T.orangeMid}`, display: "flex", alignItems: "flex-start", gap: 22 }}>
+              <div style={{ width: 48, flexShrink: 0, textAlign: "center", fontSize: 30, marginTop: 2 }}>🤝</div>
               <div style={{ flex: 1, textAlign: "left" }}>
                 <p style={{ margin: "0 0 4px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>Patrocinios</p>
                 <p style={{ margin: 0, fontSize: 15, color: T.textMid }}>¿Tu empresa quiere llegar a desarrolladores del AMBA? <span style={{ color: T.orange, fontWeight: 700, cursor: "pointer" }} onClick={() => setVista("contacto")}>Hablemos →</span></p>
@@ -1209,7 +1231,7 @@ export default function App() {
         onClick={() => setMostrarModalCalificar(true)}
         title="Calificar municipio"
         style={{
-          position: "fixed", bottom: 80, right: 24,
+          position: "fixed", bottom: 88, right: 24,
           width: 56, height: 56, borderRadius: "50%",
           background: T.orange, color: "#fff", fontSize: 22,
           boxShadow: `0 4px 20px ${T.orange}88`,

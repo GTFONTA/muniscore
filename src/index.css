@@ -129,6 +129,11 @@ code {
   .metodologia-heading { font-size: 28px !important; }
 }
 
+/* ── I1: Ranking heading — font-size mobile ── */
+@media (max-width: 480px) {
+  .ranking-heading { font-size: 36px !important; line-height: 1.15; }
+}
+
 /* ── I4: Featured article — layout columna en mobile ── */
 @media (max-width: 768px) {
   .featured-article { flex-direction: column !important; }
