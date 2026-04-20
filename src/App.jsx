@@ -911,9 +911,9 @@ export default function App() {
                     { label: "Mejor índice",     val: mejor?.nombre,     col: T.green },
                     { label: "Mayor dificultad", val: peor?.nombre,      col: T.red },
                   ].map((s, i) => (
-                    <div key={i} style={{ borderRadius: 16, background: T.bg, boxShadow: T.shadowCard, padding: "18px 22px", border: `1px solid ${T.border}`, display: "flex", flexDirection: "column", gap: 5 }}>
-                      <p style={{ margin: 0, fontSize: 11, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase" }}>{s.label}</p>
-                      <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: s.col, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.val || "—"}</p>
+                    <div key={i} style={{ borderRadius: 16, background: T.bg, boxShadow: T.shadowCard, padding: "18px 22px", border: `1px solid ${T.border}`, display: "flex", flexDirection: "column", gap: 5, alignItems: "center" }}>
+                      <p style={{ margin: 0, fontSize: 11, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase", textAlign: "center" }}>{s.label}</p>
+                      <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: s.col, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "center" }}>{s.val || "—"}</p>
                     </div>
                   ))
               }
