@@ -970,7 +970,7 @@ export default function App() {
         <div style={{ flex: 1, width: "100%", padding: "52px 48px", animation: "fadeUp 0.25s ease" }}>
           <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
             <p style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Blog & Noticias</p>
-            <h1 style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1 }}>Para <span style={{ color: T.orange }}>desarrolladores</span> e inversores</h1>
+            <h1 style={{ margin: "0 0 10px", fontSize: "clamp(22px, 7vw, 42px)", fontWeight: 800, color: T.text, letterSpacing: -1, lineHeight: 1.2 }}>Para <span style={{ color: T.orange }}>desarrolladores</span> e inversores</h1>
             <p style={{ fontSize: 17, color: T.textMid, margin: "0 0 40px" }}>Normativa, análisis y novedades del sector en el AMBA.</p>
           </div>
 
