@@ -7,7 +7,7 @@ import L from 'leaflet';
 
 // Quita tildes y normaliza para comparar nombres de municipios
 function normalizar(str) {
-  return str?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim() || '';
+  return str?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\./g, '').toLowerCase().trim() || '';
 }
 
 // 🎨 Función que decide el color según el puntaje (polígonos del mapa)
