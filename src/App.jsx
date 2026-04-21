@@ -82,10 +82,9 @@ const PREGUNTAS = [
 //  HELPERS
 // ─────────────────────────────────────────────
 const getScore = (s) => {
-  if (s >= 4.0) return { c: T.green,  soft: T.greenSoft,  mid: T.greenMid,  label: "Favorable" };
-  if (s >= 3.0) return { c: T.yellow, soft: T.yellowSoft, mid: T.yellowMid, label: "Moderado"  };
-  if (s >= 2.0) return { c: T.red,    soft: T.redSoft,    mid: T.redMid,    label: "Difícil"   };
-  return               { c: T.red,    soft: T.redSoft,    mid: T.redMid,    label: "Crítico"   };
+  if (s >= 3.5) return { c: T.green,  soft: T.greenSoft,  mid: T.greenMid,  label: "Favorable" };
+  if (s >= 2.0) return { c: T.yellow, soft: T.yellowSoft, mid: T.yellowMid, label: "Moderado"  };
+  return               { c: T.red,    soft: T.redSoft,    mid: T.redMid,    label: "Difícil"   };
 };
 
 const formatFecha = (isoStr) => {
@@ -608,7 +607,7 @@ const PanelMunicipio = ({ mun, usuario, onClose, onVotado }) => {
               <p style={{ margin: 0, fontSize: 13, color: "#7B2021", lineHeight: 1.5 }}>Este municipio presenta dificultades administrativas significativas.</p>
             </div>
           )}
-          {(mun.puntaje_global || 0) >= 4.0 && (
+          {(mun.puntaje_global || 0) >= 3.5 && (
             <div style={{ marginTop: 18, padding: "14px 16px", borderRadius: T.radius, background: T.greenSoft, border: `1px solid ${T.greenMid}` }}>
               <p style={{ margin: "0 0 4px", fontSize: 13, color: T.green, fontWeight: 700 }}>✓ Condiciones favorables</p>
               <p style={{ margin: 0, fontSize: 13, color: "#005A55", lineHeight: 1.5 }}>Alta transparencia y agilidad. Recomendado para nuevos desarrollos.</p>
@@ -950,7 +949,7 @@ export default function App() {
           </div>
           {/* Leyenda — única, centrada, siempre visible */}
           <div style={{ display: "flex", gap: 28, alignItems: "center", justifyContent: "center", padding: "8px 0", flexWrap: "wrap" }}>
-            {[[T.green, "≥ 4.0 Favorable"], [T.yellow, "3–3.9 Moderado"], [T.red, "< 3.0 Difícil"]].map(([c, l]) => (
+            {[[T.green, "≥ 3.5 Favorable"], [T.yellow, "2–3.4 Moderado"], [T.red, "< 2.0 Difícil"]].map(([c, l]) => (
               <div key={l} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ width: 20, height: 20, borderRadius: "50%", background: c, flexShrink: 0 }} />
                 <span style={{ fontSize: 24, color: T.textMid }}>{l}</span>
