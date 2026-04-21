@@ -110,7 +110,7 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
     setSeleccionado({
       nombre,
       puntaje:     datos?.puntaje_global || 0,
-      evaluaciones: datos?.total_evaluaciones || 0,
+      evaluaciones: datos?.total_votos || 0,
     });
     if (onSeleccionar && datos) onSeleccionar(datos);
   }
@@ -173,7 +173,7 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
         setSeleccionado({
           nombre,
           puntaje:      datosClick?.puntaje_global || 0,
-          evaluaciones: datosClick?.total_evaluaciones || 0,
+          evaluaciones: datosClick?.total_votos || 0,
         });
         if (onSeleccionar) onSeleccionar(datosClick || { nombre, id: null, puntaje_global: 0, total_votos: 0, region: '' });
       },
@@ -224,7 +224,7 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
             {sugerencias.map(f => {
               const nom  = f.properties.departamento;
               const dat  = municipiosRef.current?.find(m => normalizar(m.nombre) === normalizar(nom));
-              const color = obtenerColor(dat?.puntaje_promedio || 0);
+              const color = obtenerColor(dat?.puntaje_global || 0);
               return (
                 <div
                   key={nom}
@@ -237,9 +237,9 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
                   <span style={{ fontSize: 13, color: '#1A1A1A', textTransform: 'capitalize', fontFamily: 'inherit' }}>
                     {nom.charAt(0) + nom.slice(1).toLowerCase()}
                   </span>
-                  {dat?.puntaje_promedio ? (
+                  {dat?.puntaje_global ? (
                     <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color }}>
-                      {dat.puntaje_promedio.toFixed(1)}
+                      {dat.puntaje_global.toFixed(1)}
                     </span>
                   ) : (
                     <span style={{ marginLeft: 'auto', fontSize: 11, color: '#A09890' }}>Sin datos</span>
