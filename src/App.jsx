@@ -70,7 +70,7 @@ const T = {
 //  2. Asegurate de que todos los pesos sumen 1.00
 // ─────────────────────────────────────────────
 const PREGUNTAS = [
-  { key: "transparencia",  emoji: "🔍", label: "Transparencia y ausencia de corrupción",        peso: 0.25, campo_db: "puntaje_transparencia"  },
+  { key: "transparencia",  emoji: "🔍", label: "Transparencia e integridad",                    peso: 0.25, campo_db: "puntaje_transparencia"  },
   { key: "velocidad",      emoji: "⚡", label: "Velocidad de aprobación de planos y permisos",  peso: 0.20, campo_db: "puntaje_velocidad"      },
   { key: "normativa",      emoji: "📋", label: "Claridad y accesibilidad de las normativas",    peso: 0.20, campo_db: "puntaje_normativa"      },
   { key: "previsibilidad", emoji: "🎯", label: "Previsibilidad y consistencia de los procesos", peso: 0.15, campo_db: "puntaje_previsibilidad"  },
@@ -158,7 +158,7 @@ const Skeleton = ({ w = "100%", h = 16, radius = 8 }) => (
 // ─────────────────────────────────────────────
 const CATEGORIAS_RANKING = [
   { key: "global",         label: "Índice Ponderado",                       campo: "puntaje_global",         invertir: false },
-  { key: "transparencia",  label: "Transparencia y ausencia de corrupción", campo: "puntaje_transparencia",  invertir: false },
+  { key: "transparencia",  label: "Transparencia e integridad",             campo: "puntaje_transparencia",  invertir: false },
   { key: "velocidad",      label: "Velocidad de aprobación",                campo: "puntaje_velocidad",      invertir: false },
   { key: "normativa",      label: "Claridad y accesibilidad normativa",     campo: "puntaje_normativa",      invertir: false },
   { key: "previsibilidad", label: "Previsibilidad y consistencia",          campo: "puntaje_previsibilidad", invertir: false },
