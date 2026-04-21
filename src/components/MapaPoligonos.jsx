@@ -13,9 +13,9 @@ function normalizar(str) {
 // 🎨 Función que decide el color según el puntaje (polígonos del mapa)
 function obtenerColor(puntaje) {
   if (!puntaje || puntaje === 0) return '#CCCCCC'; // Gris: sin datos
-  if (puntaje < 3)  return '#E74C3C'; // 🔴 Rojo: difícil (1 a 2.9)
-  if (puntaje < 4)  return '#F39C12'; // 🟡 Amarillo: moderado (3 a 3.9)
-  return '#27AE60';                   // 🟢 Verde: favorable (4 a 5)
+  if (puntaje < 2.0) return '#C0392B'; // 🔴 Rojo: difícil (< 2.0)
+  if (puntaje < 3.5) return '#C27D00'; // 🟡 Amarillo: moderado (2.0 a 3.4)
+  return '#007A70';                    // 🟢 Verde: favorable (≥ 3.5)
 }
 
 // 🎨 Color del badge en el tooltip (escala más fina — WCAG 2.1 AA sobre blanco)
