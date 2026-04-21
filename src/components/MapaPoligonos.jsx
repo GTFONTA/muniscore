@@ -54,6 +54,9 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
   const municipiosRef    = useRef(municipios);
   const busquedaRef      = useRef(null);
 
+  // Mantener el ref sincronizado en cada render (antes de que Leaflet llame a onCadaPoligono)
+  municipiosRef.current = municipios;
+
   // 📥 Cargar el GeoJSON desde /public
   useEffect(() => {
     fetch('/municipios-amba.geojson')
@@ -74,10 +77,7 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Mantener municipiosRef actualizado
-  useEffect(() => {
-    municipiosRef.current = municipios;
-  }, [municipios]);
+  // (municipiosRef se actualiza en el render body para garantizar sincronía con Leaflet)
 
   // Cerrar sugerencias al hacer click fuera
   useEffect(() => {
