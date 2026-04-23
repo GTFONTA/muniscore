@@ -1030,7 +1030,7 @@ export default function App() {
                 <p style={{ margin: "0 0 4px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", textAlign: "center" }}>Comunidad</p>
                 <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: T.text, letterSpacing: -0.5, textAlign: "center" }}>Opiniones anónimas</h2>
               </div>
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <div style={{ display: "flex", justifyContent: "center" }}>
                 <select
                   value={filtroComMunicipio}
                   onChange={e => setFiltroComMunicipio(e.target.value)}
