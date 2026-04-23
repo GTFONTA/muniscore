@@ -47,8 +47,6 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
   const [busqueda, setBusqueda]           = useState('');
   const [sugerencias, setSugerencias]     = useState([]);
   const [featureFoco, setFeatureFoco]     = useState(null);
-  const [isMobile, setIsMobile]           = useState(false);
-  const [mapInteractive, setMapInteractive] = useState(false);
 
   const geojsonLayerRef  = useRef(null);
   const municipiosRef    = useRef(municipios);
@@ -69,13 +67,6 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
     setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
   }, []);
 
-  // Detectar mobile para activar overlay de interacción consciente
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
 
   // (municipiosRef se actualiza en el render body para garantizar sincronía con Leaflet)
 
@@ -253,18 +244,12 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
 
       {/* 🗺️ Mapa */}
       <div style={{ position: 'relative' }}>
-        {/* Overlay de interacción consciente — solo mobile, hasta primer tap */}
-        {isMobile && !mapInteractive && (
-          <div className="map-touch-overlay" onClick={() => setMapInteractive(true)}>
-            <span>Tocá para activar el mapa<br />Usá dos dedos para desplazar</span>
-          </div>
-        )}
         <MapContainer
           center={[-34.62, -58.44]}
           zoom={9}
           style={{ height: '65vh', minHeight: '500px', width: '100%', borderRadius: 0 }}
-          scrollWheelZoom={!isMobile || mapInteractive}
-          dragging={!isMobile || mapInteractive}
+          scrollWheelZoom={true}
+          dragging={true}
         >
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
