@@ -757,10 +757,12 @@ export default function App() {
       .nav-cta   { display:flex; align-items:center; }
       .nav-hamburger { display:none; background:none; border:none; font-size:22px; cursor:pointer; color:${T.text}; padding:8px; line-height:1; }
       .ranking-cols { display:flex; gap:24px; align-items:flex-start; }
+      .vista-noticias { padding: 52px 48px; }
       @media (max-width:768px) {
         .nav-links, .nav-cta { display:none !important; }
         .nav-hamburger { display:block !important; }
         .ranking-cols { flex-direction:column; }
+        .vista-noticias { padding: 32px 16px; }
       }
       .hero-bar {
         width: 100%;
@@ -966,7 +968,7 @@ export default function App() {
 
       {/* VISTA: NOTICIAS */}
       {vista === "noticias" && (
-        <div style={{ flex: 1, width: "100%", padding: "52px 48px", animation: "fadeUp 0.25s ease" }}>
+        <div className="vista-noticias" style={{ flex: 1, width: "100%", animation: "fadeUp 0.25s ease" }}>
           <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
             <p style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Blog & Noticias</p>
             <h1 style={{ margin: "0 0 10px", fontSize: "clamp(22px, 7vw, 42px)", fontWeight: 800, color: T.text, letterSpacing: -1, lineHeight: 1.2 }}>Para <span style={{ color: T.orange }}>desarrolladores</span> e inversores</h1>
@@ -1050,7 +1052,7 @@ export default function App() {
                 ? <p style={{ color: T.textLight, textAlign: "center", marginTop: 32, fontSize: 14 }}>
                     Aún no hay opiniones de la comunidad.{!filtroComMunicipio ? " ¡Calificá un municipio para ser el primero!" : ""}
                   </p>
-                : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 16 }}>
+                : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 16 }}>
                     {comentariosComunidad.map((c, i) => (
                       <div key={i} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "16px 18px", boxShadow: T.shadowCard }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
