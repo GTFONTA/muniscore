@@ -470,7 +470,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
                 <select value={tipo} onChange={e => setTipo(e.target.value)} style={{ width: "100%", padding: "10px 14px", borderRadius: T.radiusSm, border: `1px solid ${T.border}`, background: T.bg, color: tipo ? T.text : T.textLight, fontSize: 13, fontFamily: "inherit" }}>
                   <option value="">Tipo de proyecto</option>
-                  {["Casa unifamiliar", "Edificio", "Industrial", "Comercial", "Otro"].map(o => <option key={o}>{o}</option>)}
+                  {["Casa unifamiliar", "Edificio", "Industrial", "Comercial", "Barrio Privado/Club de campo", "Otro"].map(o => <option key={o}>{o}</option>)}
                 </select>
                 <div>
                   <input type="number" placeholder="Meses promedio para obtención de permiso de construcción" value={meses} onChange={e => setMeses(e.target.value)}
