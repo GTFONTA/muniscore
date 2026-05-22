@@ -726,14 +726,14 @@ export default function App() {
     });
   }, []);
 
-  // Cargar comentarios de la comunidad cuando se abre la sección Noticias
+  // Cargar comentarios de la comunidad cuando se abre la sección Reseñas
   useEffect(() => {
-    if (vista !== "noticias") return;
+    if (vista !== "reseñas") return;
     setCargandoComments(true);
     const munId = filtroComMunicipio
       ? municipios.find(m => m.nombre === filtroComMunicipio)?.id || null
       : null;
-    getComentariosPublicos(munId, 40).then(({ data }) => {
+    getComentariosPublicos(munId, 100).then(({ data }) => {
       setComentariosComunidad(data || []);
       setCargandoComments(false);
     });
@@ -820,7 +820,7 @@ export default function App() {
         </div>
 
         <div className="nav-links">
-          {[["mapa", "Mapa"], ["ranking", "Ranking"], ["noticias", "Noticias"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
+          {[["mapa", "Mapa"], ["ranking", "Ranking"], ["noticias", "Noticias"], ["reseñas", "Reseñas y comentarios"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
             <button key={v} onClick={() => setVista(v)} style={{ background: "none", border: "none", padding: "22px 16px", cursor: "pointer", borderBottom: vista === v ? `2px solid ${T.orange}` : "2px solid transparent", color: vista === v ? T.text : T.textMid, fontWeight: vista === v ? 700 : 500, fontSize: 15, fontFamily: "inherit" }}>{l}</button>
           ))}
         </div>
@@ -847,7 +847,7 @@ export default function App() {
       {/* Menú desplegable mobile */}
       {menuAbierto && (
         <div style={{ position: "fixed", top: 62, left: 0, right: 0, background: T.bg, borderBottom: `1px solid ${T.border}`, padding: "12px 24px 20px", display: "flex", flexDirection: "column", gap: 0, zIndex: 999, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}>
-          {[["mapa", "Mapa"], ["ranking", "Ranking"], ["noticias", "Noticias"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
+          {[["mapa", "Mapa"], ["ranking", "Ranking"], ["noticias", "Noticias"], ["reseñas", "Reseñas y comentarios"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
             <button key={v} onClick={() => { setVista(v); setMenuAbierto(false); }} style={{ background: "none", border: "none", textAlign: "left", padding: "13px 0", cursor: "pointer", borderBottom: `1px solid ${T.border}`, color: vista === v ? T.orange : T.text, fontWeight: vista === v ? 700 : 500, fontSize: 15, fontFamily: "inherit" }}>{l}</button>
           ))}
           <div style={{ marginTop: 14 }}>
@@ -1024,50 +1024,57 @@ export default function App() {
           <div style={{ marginTop: articulos.length > 0 ? 48 : 0 }}>
             <NoticiasCarrusel />
           </div>
+        </div>
+      )}
 
-          {/* ── Opiniones de la comunidad ───────────────────── */}
-          <div style={{ marginTop: 56 }}>
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ textAlign: "center", marginBottom: 12 }}>
-                <p style={{ margin: "0 0 4px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", textAlign: "center" }}>Comunidad</p>
-                <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: T.text, letterSpacing: -0.5, textAlign: "center" }}>Opiniones anónimas</h2>
-              </div>
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <select
-                  value={filtroComMunicipio}
-                  onChange={e => setFiltroComMunicipio(e.target.value)}
-                  style={{ padding: "9px 14px", borderRadius: T.radius, border: `1.5px solid ${T.border}`, background: T.bg, color: filtroComMunicipio ? T.text : T.textLight, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}
-                >
-                  <option value="">Todos los municipios</option>
-                  {municipios.map(m => <option key={m.id} value={m.nombre}>{m.nombre}</option>)}
-                </select>
-              </div>
+      {/* VISTA: RESEÑAS Y COMENTARIOS */}
+      {vista === "reseñas" && (
+        <div style={{ flex: 1, width: "100%", padding: "52px 48px", animation: "fadeUp 0.25s ease" }} className="vista-noticias">
+          <div style={{ maxWidth: 960, margin: "0 auto" }}>
+            <div style={{ textAlign: "center", marginBottom: 40 }}>
+              <p style={{ margin: "0 0 6px", fontSize: 11, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Comunidad</p>
+              <h1 style={{ margin: "0 0 12px", fontSize: 36, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>Reseñas y <span style={{ color: T.orange }}>comentarios</span></h1>
+              <p style={{ margin: 0, fontSize: 16, color: T.textMid, maxWidth: 520, marginLeft: "auto", marginRight: "auto", lineHeight: 1.6 }}>Opiniones anónimas de la comunidad sobre los trámites municipales, ordenadas del más reciente al más antiguo.</p>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 32 }}>
+              <select
+                value={filtroComMunicipio}
+                onChange={e => setFiltroComMunicipio(e.target.value)}
+                style={{ padding: "10px 16px", borderRadius: T.radius, border: `1.5px solid ${T.border}`, background: T.bg, color: filtroComMunicipio ? T.text : T.textLight, fontSize: 14, fontFamily: "inherit", cursor: "pointer", minWidth: 220 }}
+              >
+                <option value="">Todos los municipios</option>
+                {municipios.map(m => <option key={m.id} value={m.nombre}>{m.nombre}</option>)}
+              </select>
             </div>
 
             {cargandoComments
               ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 16 }}>
-                  {[1,2,3].map(i => <Skeleton key={i} h={110} radius={14} />)}
+                  {[1,2,3,4,5,6].map(i => <Skeleton key={i} h={120} radius={14} />)}
                 </div>
               : comentariosComunidad.length === 0
-                ? <p style={{ color: T.textLight, textAlign: "center", marginTop: 32, fontSize: 14 }}>
-                    Aún no hay opiniones de la comunidad.{!filtroComMunicipio ? " ¡Calificá un municipio para ser el primero!" : ""}
+                ? <p style={{ color: T.textLight, textAlign: "center", marginTop: 48, fontSize: 15 }}>
+                    Aún no hay comentarios{filtroComMunicipio ? ` para ${filtroComMunicipio}` : ""}. {!filtroComMunicipio ? "¡Calificá un municipio para ser el primero!" : ""}
                   </p>
-                : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 16 }}>
-                    {comentariosComunidad.map((c, i) => (
-                      <div key={i} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "16px 18px", boxShadow: T.shadowCard }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: T.orange }}>
-                            {c.municipios?.nombre || "—"}
-                          </span>
-                          <span style={{ fontSize: 11, color: T.textLight }}>{formatFecha(c.created_at)}</span>
+                : <>
+                    <p style={{ textAlign: "center", fontSize: 13, color: T.textLight, marginBottom: 20 }}>
+                      {comentariosComunidad.length} comentario{comentariosComunidad.length !== 1 ? "s" : ""}{filtroComMunicipio ? ` en ${filtroComMunicipio}` : ""}
+                    </p>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 16 }}>
+                      {comentariosComunidad.map((c, i) => (
+                        <div key={i} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "18px 20px", boxShadow: T.shadowCard }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: T.orange }}>{c.municipios?.nombre || "—"}</span>
+                            <span style={{ fontSize: 11, color: T.textLight }}>{formatFecha(c.created_at)}</span>
+                          </div>
+                          <p style={{ margin: 0, fontSize: 13, color: T.textMid, lineHeight: 1.65 }}>{c.comentario}</p>
+                          {c.tipo_proyecto && (
+                            <div style={{ marginTop: 10 }}><Pill label={c.tipo_proyecto} color={T.blue} /></div>
+                          )}
                         </div>
-                        <p style={{ margin: 0, fontSize: 13, color: T.textMid, lineHeight: 1.6 }}>{c.comentario}</p>
-                        {c.tipo_proyecto && (
-                          <div style={{ marginTop: 10 }}><Pill label={c.tipo_proyecto} color={T.blue} /></div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  </>
             }
           </div>
         </div>
