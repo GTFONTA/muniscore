@@ -675,6 +675,8 @@ const PanelMunicipio = ({ mun, usuario, onClose, onVotado }) => {
 // ─────────────────────────────────────────────
 //  APP PRINCIPAL
 // ─────────────────────────────────────────────
+const MOSTRAR_NOTICIAS = false;
+
 export default function App() {
   const [municipios, setMunicipios] = useState([]);
   const [activo, setActivo]         = useState(null);
@@ -820,7 +822,7 @@ export default function App() {
         </div>
 
         <div className="nav-links">
-          {[["mapa", "Mapa"], ["ranking", "Ranking"], ["noticias", "Noticias"], ["reseñas", "Reseñas y comentarios"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
+          {[["mapa", "Mapa"], ["ranking", "Ranking"], ...(MOSTRAR_NOTICIAS ? [["noticias", "Noticias"]] : []), ["reseñas", "Reseñas y comentarios"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
             <button key={v} onClick={() => setVista(v)} style={{ background: "none", border: "none", padding: "22px 16px", cursor: "pointer", borderBottom: vista === v ? `2px solid ${T.orange}` : "2px solid transparent", color: vista === v ? T.text : T.textMid, fontWeight: vista === v ? 700 : 500, fontSize: 15, fontFamily: "inherit" }}>{l}</button>
           ))}
         </div>
@@ -847,7 +849,7 @@ export default function App() {
       {/* Menú desplegable mobile */}
       {menuAbierto && (
         <div style={{ position: "fixed", top: 62, left: 0, right: 0, background: T.bg, borderBottom: `1px solid ${T.border}`, padding: "12px 24px 20px", display: "flex", flexDirection: "column", gap: 0, zIndex: 999, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}>
-          {[["mapa", "Mapa"], ["ranking", "Ranking"], ["noticias", "Noticias"], ["reseñas", "Reseñas y comentarios"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
+          {[["mapa", "Mapa"], ["ranking", "Ranking"], ...(MOSTRAR_NOTICIAS ? [["noticias", "Noticias"]] : []), ["reseñas", "Reseñas y comentarios"], ["metodologia", "Metodología"], ["contacto", "Contacto"]].map(([v, l]) => (
             <button key={v} onClick={() => { setVista(v); setMenuAbierto(false); }} style={{ background: "none", border: "none", textAlign: "left", padding: "13px 0", cursor: "pointer", borderBottom: `1px solid ${T.border}`, color: vista === v ? T.orange : T.text, fontWeight: vista === v ? 700 : 500, fontSize: 15, fontFamily: "inherit" }}>{l}</button>
           ))}
           <div style={{ marginTop: 14 }}>
@@ -967,7 +969,7 @@ export default function App() {
       )}
 
       {/* VISTA: NOTICIAS */}
-      {vista === "noticias" && (
+      {MOSTRAR_NOTICIAS && vista === "noticias" && (
         <div className="vista-noticias" style={{ flex: 1, width: "100%", animation: "fadeUp 0.25s ease" }}>
           <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
             <p style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Blog & Noticias</p>
