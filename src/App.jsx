@@ -81,10 +81,21 @@ const PREGUNTAS = [
 // ─────────────────────────────────────────────
 //  HELPERS
 // ─────────────────────────────────────────────
+function puntajeAColor(puntaje) {
+  if (!puntaje || puntaje === 0) return '#CCCCCC';
+  const t    = Math.min(Math.max(puntaje / 5, 0), 1);
+  const tc   = t * t;
+  const hue  = tc * 152;
+  const sat  = 88 - tc * 28;
+  const lit  = 44 - tc * 8;
+  return `hsl(${hue.toFixed(1)}, ${sat.toFixed(0)}%, ${lit.toFixed(0)}%)`;
+}
+
 const getScore = (s) => {
-  if (s >= 3.5) return { c: T.green,  soft: T.greenSoft,  mid: T.greenMid,  label: "Favorable" };
-  if (s >= 2.0) return { c: T.yellow, soft: T.yellowSoft, mid: T.yellowMid, label: "Moderado"  };
-  return               { c: T.red,    soft: T.redSoft,    mid: T.redMid,    label: "Difícil"   };
+  const c = puntajeAColor(s);
+  if (s >= 3.5) return { c, soft: T.greenSoft,  mid: T.greenMid,  label: "Favorable" };
+  if (s >= 2.0) return { c, soft: T.yellowSoft, mid: T.yellowMid, label: "Moderado"  };
+  return               { c, soft: T.redSoft,    mid: T.redMid,    label: "Difícil"   };
 };
 
 const formatFecha = (isoStr) => {
@@ -735,7 +746,8 @@ export default function App() {
     const munId = filtroComMunicipio
       ? municipios.find(m => m.nombre === filtroComMunicipio)?.id || null
       : null;
-    getComentariosPublicos(munId, 100).then(({ data }) => {
+    getComentariosPublicos(munId, 100).then(({ data, error }) => {
+      if (error) console.error('[Reseñas] Error al cargar comentarios:', error);
       setComentariosComunidad(data || []);
       setCargandoComments(false);
     });
@@ -952,13 +964,13 @@ export default function App() {
             )}
           </div>
           {/* Leyenda — única, centrada, siempre visible */}
-          <div style={{ display: "flex", gap: 28, alignItems: "center", justifyContent: "center", padding: "8px 0", flexWrap: "wrap" }}>
-            {[[T.green, "≥ 3.5 Favorable"], [T.yellow, "2–3.4 Moderado"], [T.red, "< 2.0 Difícil"]].map(([c, l]) => (
-              <div key={l} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 20, height: 20, borderRadius: "50%", background: c, flexShrink: 0 }} />
-                <span style={{ fontSize: 24, color: T.textMid }}>{l}</span>
-              </div>
-            ))}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "8px 16px" }}>
+            <div style={{ width: "min(320px, 90vw)", height: 14, borderRadius: 99, background: "linear-gradient(to right, hsl(0,85%,45%), hsl(45,90%,42%), hsl(152,60%,36%))" }} />
+            <div style={{ width: "min(320px, 90vw)", display: "flex", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 11, color: T.textMid }}>Difícil</span>
+              <span style={{ fontSize: 11, color: T.textMid }}>Moderado</span>
+              <span style={{ fontSize: 11, color: T.textMid }}>Favorable</span>
+            </div>
           </div>
         </div>
       )}

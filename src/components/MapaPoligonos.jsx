@@ -10,20 +10,16 @@ function normalizar(str) {
   return str?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\./g, '').toLowerCase().trim() || '';
 }
 
-// 🎨 Función que decide el color según el puntaje (polígonos del mapa)
-function obtenerColor(puntaje) {
-  if (!puntaje || puntaje === 0) return '#CCCCCC'; // Gris: sin datos
-  if (puntaje < 2.0) return '#C0392B'; // 🔴 Rojo: difícil (< 2.0)
-  if (puntaje < 3.5) return '#C27D00'; // 🟡 Amarillo: moderado (2.0 a 3.4)
-  return '#007A70';                    // 🟢 Verde: favorable (≥ 3.5)
-}
-
-// 🎨 Color del badge en el tooltip (escala más fina — WCAG 2.1 AA sobre blanco)
-function obtenerColorBadge(puntaje) {
-  if (!puntaje || puntaje === 0) return '#9CA3AF';
-  if (puntaje < 2.5) return '#D32F2F'; // ratio ~5.2:1 ✓
-  if (puntaje < 3.5) return '#C27D00'; // ratio ~4.7:1 ✓
-  return '#007A70';                    // ratio ~4.6:1 ✓
+// 🎨 Escala de color continua rojo → amarillo → verde según puntaje (0–5)
+// Usa curva cuadrática para que los puntajes bajos permanezcan rojos más tiempo.
+function puntajeAColor(puntaje) {
+  if (!puntaje || puntaje === 0) return '#CCCCCC';
+  const t    = Math.min(Math.max(puntaje / 5, 0), 1);
+  const tc   = t * t;               // curva cuadrática: rojos dominan el rango bajo
+  const hue  = tc * 152;            // 0° rojo → 45° amarillo → 152° verde
+  const sat  = 88 - tc * 28;        // 88% → 60%
+  const lit  = 44 - tc * 8;         // 44% → 36%
+  return `hsl(${hue.toFixed(1)}, ${sat.toFixed(0)}%, ${lit.toFixed(0)}%)`;
 }
 
 // Componente interno que accede al mapa para hacer zoom
@@ -111,7 +107,7 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
     const nombre = feature.properties.departamento;
     const datos  = municipios?.find(m => normalizar(m.nombre) === normalizar(nombre));
     return {
-      fillColor:   obtenerColor(datos?.puntaje_global || 0),
+      fillColor:   puntajeAColor(datos?.puntaje_global || 0),
       fillOpacity: 0.65,
       color:       '#FFFFFF',
       weight:      2,
@@ -124,7 +120,7 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
     const datos      = municipiosRef.current?.find(m => normalizar(m.nombre) === normalizar(nombre));
     const puntajeRaw = datos?.puntaje_global;
     const puntaje    = puntajeRaw?.toFixed(1) || null;
-    const color      = obtenerColorBadge(puntajeRaw);
+    const color      = puntajeAColor(puntajeRaw);
     const barWidth   = puntajeRaw ? Math.round((puntajeRaw / 5) * 100) : 0;
 
     const tooltipHTML = `
@@ -215,7 +211,7 @@ export default function MapaPoligonos({ municipios, onSeleccionar }) {
             {sugerencias.map(f => {
               const nom  = f.properties.departamento;
               const dat  = municipiosRef.current?.find(m => normalizar(m.nombre) === normalizar(nom));
-              const color = obtenerColor(dat?.puntaje_global || 0);
+              const color = puntajeAColor(dat?.puntaje_global || 0);
               return (
                 <div
                   key={nom}
