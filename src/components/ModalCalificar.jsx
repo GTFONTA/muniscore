@@ -1,6 +1,6 @@
 import { useState } from 'react';
 // ✅ CORRECTO para Vite — importar desde la ruta relativa
-import { supabase } from '../lib/supabase';
+import { loginConEmail } from '../lib/supabase';
 
 // Lista de municipios del AMBA — modificá según necesites
 const MUNICIPIOS_AMBA = [
@@ -30,15 +30,12 @@ export default function ModalCalificar({ alCerrar, alConfirmarMunicipio }) {
     setCargando(true);
     setMensaje('');
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        // Esta es la URL a la que Supabase redirige después de hacer clic en el email
-        emailRedirectTo: window.location.origin,
-      },
-    });
+    // Compuerta centralizada: verifica lista blanca y, si corresponde, envía el link.
+    const { error } = await loginConEmail(email);
 
-    if (error) {
+    if (error === 'no_autorizado') {
+      setMensaje('Este correo no está habilitado para votar. Si tu empresa quiere participar, contactanos.');
+    } else if (error) {
       setMensaje('❌ Error al enviar el email. Revisá que sea válido e intentá de nuevo.');
     } else {
       setPaso('esperando');

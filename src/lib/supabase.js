@@ -64,38 +64,49 @@ export async function getEncuestasMunicipio(municipioId) {
   return { data, error };
 }
 
-// ── Verifica si el usuario ya votó en este municipio ────────
+// ── Verifica si la EMPRESA ya votó en este municipio ────────
+// Resuelve el voto por empresa_id (vía RPC mi_voto), no por usuario_id,
+// así sigue precargando aunque el voto se haya emitido con un mail
+// anterior (herencia, Fase 4).
 export async function yaVoto(municipioId) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { existe: false, votoId: null, votoActual: null };
 
-  const { data } = await supabase
-    .from('encuestas')
-    .select('id, puntaje_transparencia, puntaje_velocidad, puntaje_normativa, puntaje_impuestos, puntaje_atencion, puntaje_previsibilidad, meses_aprobacion, tipo_proyecto, comentario')
-    .eq('municipio_id', municipioId)
-    .eq('usuario_id', user.id)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc('mi_voto', { p_municipio_id: municipioId });
+  if (error) {
+    console.error('Error al verificar voto:', error.message);
+    return { existe: false, votoId: null, votoActual: null };
+  }
 
-  if (!data) return { existe: false, votoId: null, votoActual: null };
+  // mi_voto devuelve un set (0 ó 1 fila)
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return { existe: false, votoId: null, votoActual: null };
+
   return {
     existe: true,
-    votoId: data.id,
+    votoId: row.id,
     votoActual: {
-      transparencia:  data.puntaje_transparencia,
-      velocidad:      data.puntaje_velocidad,
-      normativa:      data.puntaje_normativa,
-      impuestos:      data.puntaje_impuestos,
-      atencion:       data.puntaje_atencion,
-      previsibilidad: data.puntaje_previsibilidad,
-      meses:          data.meses_aprobacion ?? "",
-      tipo:           data.tipo_proyecto ?? "",
-      comentario:     data.comentario ?? "",
+      transparencia:  row.puntaje_transparencia,
+      velocidad:      row.puntaje_velocidad,
+      normativa:      row.puntaje_normativa,
+      impuestos:      row.puntaje_impuestos,
+      atencion:       row.puntaje_atencion,
+      previsibilidad: row.puntaje_previsibilidad,
+      meses:          row.meses_aprobacion ?? "",
+      tipo:           row.tipo_proyecto ?? "",
+      comentario:     row.comentario ?? "",
     }
   };
 }
 
-// ── Envía el voto del usuario ───────────────────────────────
-export async function enviarVoto({
+// ── Guardado del voto anclado a la EMPRESA (UPSERT vía RPC) ──
+// Toda la resolución mail→empresa_id y la clave única
+// (empresa_id, municipio_id) viven en el RPC `votar` (SECURITY
+// DEFINER). El cliente no decide insert vs update: el UPSERT lo
+// resuelve. Por eso enviarVoto y actualizarVoto delegan en la
+// MISMA función (sin duplicar lógica). `votoId` se ignora: la
+// identidad es la empresa, no la fila ni el auth user.
+async function guardarVotoEmpresa({
   municipioId,
   puntajeTransparencia,
   puntajeVelocidad,
@@ -107,69 +118,80 @@ export async function enviarVoto({
   tipoProyecto,
   comentario,
 }) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data, error } = await supabase.rpc('votar', {
+    p_municipio_id:   municipioId,
+    p_transparencia:  puntajeTransparencia,
+    p_velocidad:      puntajeVelocidad,
+    p_normativa:      puntajeNormativa,
+    p_impuestos:      puntajeImpuestos,
+    p_atencion:       puntajeAtencion,
+    p_previsibilidad: puntajePrevisibilidad,
+    p_meses:          mesesAprobacion || null,
+    p_tipo:           tipoProyecto || null,
+    p_comentario:     comentario || null,
+  });
 
-  if (!user) {
-    return { error: 'Debés iniciar sesión para votar.' };
+  if (error) {
+    console.error('Error al guardar voto:', error.message);
+    // El RPC lanza 'no_autorizado' / 'no_autenticado' como excepción.
+    if (error.message && error.message.includes('no_autorizado')) {
+      return { data: null, error: 'no_autorizado' };
+    }
+    return { data: null, error };
+  }
+  return { data, error: null };
+}
+
+// ── Envía el voto (alias hacia el UPSERT por empresa) ────────
+export async function enviarVoto(payload) {
+  return guardarVotoEmpresa(payload);
+}
+
+// ── Actualiza el voto (mismo UPSERT por empresa; votoId ignorado) ──
+export async function actualizarVoto(payload) {
+  return guardarVotoEmpresa(payload);
+}
+
+// ── Autenticación: COMPUERTA + envío de Magic Link ───────────
+// ÚNICA función para pedir el Magic Link. La usan los dos modales
+// (App.jsx → ModalEncuesta y components/ModalCalificar.jsx).
+//
+// Antes de enviar el link, verifica contra la lista blanca usando el
+// RPC `email_autorizado` (booleano, no expone la lista). Si el mail no
+// está habilitado (o no está activo), NO envía el link.
+//
+// Devuelve:
+//   { error: null }            → autorizado, link enviado (flujo de siempre)
+//   { error: 'no_autorizado' } → el mail no está en la lista blanca
+//   { error: 'envio' }         → fallo técnico (RPC o envío del OTP)
+export async function loginConEmail(email) {
+  const emailNorm = (email || '').trim().toLowerCase();
+
+  // 1) Compuerta: ¿está habilitado para votar?
+  const { data: autorizado, error: rpcError } = await supabase
+    .rpc('email_autorizado', { p_email: emailNorm });
+
+  if (rpcError) {
+    console.error('Error al verificar autorización:', rpcError.message);
+    return { error: 'envio' };
+  }
+  if (!autorizado) {
+    return { error: 'no_autorizado' };
   }
 
-  const { data, error } = await supabase
-    .from('encuestas')
-    .insert({
-      municipio_id:           municipioId,
-      usuario_id:             user.id,
-      puntaje_transparencia:  puntajeTransparencia,
-      puntaje_velocidad:      puntajeVelocidad,
-      puntaje_normativa:      puntajeNormativa,
-      puntaje_impuestos:      puntajeImpuestos,
-      puntaje_atencion:       puntajeAtencion,
-      puntaje_previsibilidad: puntajePrevisibilidad,
-      meses_aprobacion:       mesesAprobacion || null,
-      tipo_proyecto:          tipoProyecto || null,
-      comentario:             comentario || null,
-      validado:               user.email_confirmed_at ? true : false,
-    });
-
-  if (error) console.error('Error al enviar voto:', error.message);
-  return { data, error };
-}
-
-// ── Actualiza un voto existente del usuario ─────────────────
-export async function actualizarVoto({ votoId, puntajeTransparencia, puntajeVelocidad, puntajeNormativa, puntajeImpuestos, puntajeAtencion, puntajePrevisibilidad, mesesAprobacion, tipoProyecto, comentario }) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Debés iniciar sesión para votar.' };
-
-  const { data, error } = await supabase
-    .from('encuestas')
-    .update({
-      puntaje_transparencia:  puntajeTransparencia,
-      puntaje_velocidad:      puntajeVelocidad,
-      puntaje_normativa:      puntajeNormativa,
-      puntaje_impuestos:      puntajeImpuestos,
-      puntaje_atencion:       puntajeAtencion,
-      puntaje_previsibilidad: puntajePrevisibilidad,
-      meses_aprobacion:       mesesAprobacion || null,
-      tipo_proyecto:          tipoProyecto || null,
-      comentario:             comentario || null,
-    })
-    .eq('id', votoId);
-
-  if (error) console.error('Error al actualizar voto:', error.message);
-  return { data, error };
-}
-
-// ── Autenticación: iniciar sesión con Magic Link ─────────────
-// El usuario recibe un email con un link, sin contraseña
-export async function loginConEmail(email) {
+  // 2) Autorizado → flujo de siempre (sin cambios)
   const { error } = await supabase.auth.signInWithOtp({
-    email,
+    email: emailNorm,
     options: {
       emailRedirectTo: window.location.origin,  // Redirige de vuelta a la app
     },
   });
 
-  if (error) console.error('Error al enviar Magic Link:', error.message);
-  return { error };
+  if (error) {
+    console.error('Error al enviar Magic Link:', error.message);
+    return { error: 'envio' };
+  }
+  return { error: null };
 }
 
 // ── Obtener el usuario actual ────────────────────────────────

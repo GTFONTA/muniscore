@@ -362,6 +362,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
     setCargando(true); setError(null);
     const { error } = await loginConEmail(email);
     setCargando(false);
+    if (error === "no_autorizado") { setError("Este correo no está habilitado para votar. Si tu empresa quiere participar, contactanos."); return; }
     if (error) { setError("No pudimos enviar el email. Verificá que sea válido."); return; }
     setLinkEnviado(true);
   };
@@ -481,7 +482,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
                 <select value={tipo} onChange={e => setTipo(e.target.value)} style={{ width: "100%", padding: "10px 14px", borderRadius: T.radiusSm, border: `1px solid ${T.border}`, background: T.bg, color: tipo ? T.text : T.textLight, fontSize: 13, fontFamily: "inherit" }}>
                   <option value="">Tipo de proyecto</option>
-                  {["Casa unifamiliar", "Edificio", "Industrial", "Comercial", "Barrio Privado/Club de campo", "Otro"].map(o => <option key={o}>{o}</option>)}
+                  {["Vivienda Unifamiliar", "Vivienda Multifamiliar", "Industrial y Logístico", "Comercial y Servicios", "Desarrollo Urbanístico", "Otro"].map(o => <option key={o}>{o}</option>)}
                 </select>
                 <div>
                   <input type="number" placeholder="Meses promedio para obtención de permiso de construcción" value={meses} onChange={e => setMeses(e.target.value)}
