@@ -65,6 +65,24 @@ NUNCA una vista que cruce empresa con el contenido/dirección del voto.
 | 5 | RLS barrera primaria + privacidad de lectura | ✅ |
 | 6 | Vista `seguimiento_empresas` (votó/no votó) | ✅ (validada por SQL) |
 
+### Feature en curso: Segmentación por tipo de obra + Puntaje v8
+> Spec: `PROMPT_TIPO_OBRA_Y_PUNTAJE_V8.md` (rama `feature/tipo-obra-puntaje-v8`).
+> Decisiones confirmadas: (1) afirmaciones en JSONB `respuestas`; (2) derivar velocidad
+> legacy desde meses (3m=5;3-6=4;6-9=3;9-12=2;12+=1) en Fase 4; (3) `tipo_obra` slug nuevo,
+> `tipo_proyecto` legacy se mantiene; (4) unique `(empresa_id, municipio_id, tipo_obra)`;
+> (5) ya se quitaron comentarios del form + subpágina Reseñas + pestaña Opiniones (commit aparte).
+
+| Fase v8 | Descripción | Estado |
+|---|---|---|
+| 0 | Diagnóstico (tabla, trigger, form, afirmaciones inexistentes hoy) | ✅ |
+| 1 | DB: columnas `tipo_obra`/`velocidad_percibida`/`tasas_porcentaje`/`presion_pagos_informales`/`respuestas` + índice único 3-cols (0008) | ✅ (corrida en Supabase) |
+| 2 | Catálogo central v8 (pesos, fórmulas, afirmaciones textuales) en módulo único | ⬜ |
+| 3 | Formulario (tipo_obra 1er paso, afirmaciones desde config, crítica, velocidad percibida+cuadro, tasas) + swap del índice/RPC `votar` | ⬜ |
+| 4 | Recálculo v8 por reseña + trigger agregación 2 niveles + filtro de mapa por tipo (UMBRAL_MIN_RESEÑAS=3, vía RPC/vista SECURITY DEFINER) | ⬜ |
+
+**Pesos v8:** Transparencia 25%, Velocidad 25%, Normativa 10%, Previsibilidad 15%,
+Atención 10%, Tasas 15%. (Velocidad y Tasas: 60% cuantitativo + 40% cuestionario.)
+
 ---
 
 ## 5. Archivos clave
@@ -100,6 +118,12 @@ NUNCA una vista que cruce empresa con el contenido/dirección del voto.
 - `supabase/migrations/0007_drop_constraint_viejo.sql` — elimina el constraint redundante
   `encuestas_municipio_id_usuario_id_key` (modelo viejo por auth-user) que bloqueaba el voto
   real. No borra votos; la unicidad la mantiene `encuestas_empresa_municipio_key`.
+- `supabase/migrations/0008_tipo_obra_puntaje_v8.sql` — **Fase 1 del v8**. Agrega (aditivo,
+  sin tocar reseñas): `tipo_obra` (text, CHECK 6 slugs o NULL), `velocidad_percibida`
+  (smallint CHECK 1-5), `tasas_porcentaje` (numeric ≥0), `presion_pagos_informales`
+  (boolean, afirmación crítica), `respuestas` (jsonb), e índice único
+  `encuestas_empresa_municipio_tipoobra_key (empresa_id, municipio_id, tipo_obra)`.
+  NO borra el índice viejo de 2 cols ni toca el RPC `votar` (eso va en Fase 3).
 - `supabase/seed/empresas_cedu_ejemplo.sql` — ejemplo de carga masiva (on conflict do nothing).
 
 ---
@@ -133,10 +157,23 @@ la lee. Los votos legacy (empresa_id NULL) no matchean ninguna empresa real.
 (recomputan agregados de `municipios` desde cero en INSERT OR UPDATE → UPSERT-safe,
 sin doble conteo).
 
+**Columnas v8 en `encuestas` (tras 0008):** `tipo_obra` (slug, NULL=legacy),
+`velocidad_percibida` (1-5), `tasas_porcentaje` (numeric), `presion_pagos_informales`
+(boolean crítico), `respuestas` (jsonb con afirmaciones tildadas). Todas NULL en legacy.
+`meses_aprobacion` se reusa como "meses hasta permiso" (estadístico en v8). `tipo_proyecto`
+(label legacy de 0006) queda intacto y SEPARADO de `tipo_obra` (slug).
+
 **Constraints relevantes:**
 - `encuestas_empresa_municipio_key (empresa_id, municipio_id)` UNIQUE — modelo nuevo.
-  ⚠️ Extensión futura (segmentación por tipo de obra): pasaría a
-  `(empresa_id, municipio_id, tipo_proyecto)` — cambiar también el ON CONFLICT del RPC `votar`.
+  ⚠️ Se mantiene SOLO hasta la Fase 3: ahí se dropea y el ON CONFLICT del RPC `votar`
+  pasa a 3 columnas (ver índice siguiente).
+- `encuestas_empresa_municipio_tipoobra_key (empresa_id, municipio_id, tipo_obra)` UNIQUE
+  (tras 0008) — "un voto por tipo de obra". NULLS DISTINCT: legacy no colisiona. Todavía
+  NO impone unicidad mientras `tipo_obra` siga NULL en votos nuevos (antes de Fase 3);
+  esa garantía la da el índice de 2 cols hasta que se haga el swap.
+- `encuestas_tipo_obra_check` (tras 0008) — acepta los 6 SLUGS o NULL: 'vivienda_unifamiliar',
+  'vivienda_multifamiliar','industrial_logistico','comercial_servicios',
+  'desarrollo_urbanistico','otro'.
 - ~~`encuestas_municipio_id_usuario_id_key (municipio_id, usuario_id)` UNIQUE~~ —
   **ELIMINADA en 0007** (era del modelo viejo por auth-user; bloqueaba el voto real
   cuando el mismo usuario ya tenía un voto previo en el municipio). El drop no borró votos.
