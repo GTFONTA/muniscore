@@ -24,6 +24,19 @@ import {
 } from './lib/supabase';
 import MapaPoligonos from './components/MapaPoligonos';
 import NoticiasCarrusel from './components/NoticiasCarrusel';
+import {
+  TIPOS_OBRA,
+  CATEGORIAS,
+  AFIRMACIONES,
+  AFIRMACION_CRITICA,
+  cuadroVelocidad,
+  TEXTO_VELOCIDAD,
+  PREGUNTA_MESES,
+  PREGUNTA_VELOCIDAD_PERCIBIDA,
+  PREGUNTA_TASAS,
+  NOTA_TASAS,
+  puntajeReseña,
+} from './lib/puntajeV8';
 
 // ─────────────────────────────────────────────
 //  TOKENS DE DISEÑO — estilo Airbnb
@@ -320,38 +333,71 @@ const VistaRanking = ({ municipios, onRefresh }) => {
 const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
   const [paso, setPaso] = useState(usuario ? 1 : 0);
   const [email, setEmail] = useState("");
-  const [pts, setPts] = useState({ transparencia: 0, velocidad: 0, normativa: 0, impuestos: 0, atencion: 0, previsibilidad: 0 });
+  const [tipoObra, setTipoObra] = useState("");
+  const [respuestas, setRespuestas] = useState({});            // { categoria: { afirmacionId: bool } }
+  const [presionInformal, setPresionInformal] = useState(false);
+  const [velocidadPercibida, setVelocidadPercibida] = useState(0);
   const [meses, setMeses] = useState("");
-  const [tipo, setTipo] = useState("");
+  const [tasasPct, setTasasPct] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
   const [linkEnviado, setLinkEnviado] = useState(false);
   const [votoExistenteInfo, setVotoExistenteInfo] = useState(null);
-  const [cargandoVotoExistente, setCargandoVotoExistente] = useState(!!usuario);
+  const [cargandoVotoExistente, setCargandoVotoExistente] = useState(false);
 
+  // Precarga del voto existente. La identidad del voto en v8 es
+  // (empresa, municipio, tipo_obra): por eso depende también de tipoObra.
+  // Sin usuario o sin tipo de obra elegido no hay nada que precargar.
   useEffect(() => {
-    if (!usuario) return;
+    if (!usuario || !tipoObra) {
+      setVotoExistenteInfo(null);
+      return;
+    }
+    let cancelado = false;
+    setCargandoVotoExistente(true);
     (async () => {
-      const resultado = await yaVoto(mun.id);
+      const resultado = await yaVoto(mun.id, tipoObra);
+      if (cancelado) return;
       if (resultado.existe) {
-        setPts({
-          transparencia:  resultado.votoActual.transparencia,
-          velocidad:      resultado.votoActual.velocidad,
-          normativa:      resultado.votoActual.normativa,
-          impuestos:      resultado.votoActual.impuestos,
-          atencion:       resultado.votoActual.atencion,
-          previsibilidad: resultado.votoActual.previsibilidad,
-        });
-        setMeses(String(resultado.votoActual.meses || ""));
-        setTipo(resultado.votoActual.tipo || "");
+        const v = resultado.votoActual;
+        setRespuestas(v.respuestas || {});
+        setPresionInformal(!!v.presionPagosInformales);
+        setVelocidadPercibida(Number(v.velocidadPercibida) || 0);
+        setMeses(v.meses === "" || v.meses == null ? "" : String(v.meses));
+        setTasasPct(v.tasasPorcentaje === "" || v.tasasPorcentaje == null ? "" : String(v.tasasPorcentaje));
         setVotoExistenteInfo({ votoId: resultado.votoId });
+      } else {
+        // No hay voto para este tipo de obra → limpiar el formulario.
+        setRespuestas({});
+        setPresionInformal(false);
+        setVelocidadPercibida(0);
+        setMeses("");
+        setTasasPct("");
+        setVotoExistenteInfo(null);
       }
       setCargandoVotoExistente(false);
     })();
-  }, [mun.id, usuario]);
+    return () => { cancelado = true; };
+  }, [mun.id, usuario, tipoObra]);
 
-  const prog  = Object.values(pts).filter(v => v > 0).length;
-  const listo = prog === 6;
+  // % de tasas: opcional vacío permitido en la UI, pero obligatorio para enviar.
+  const tasasNum = tasasPct.trim() === "" ? null : Number(tasasPct);
+  const tasasOk  = tasasNum != null && isFinite(tasasNum) && tasasNum >= 0;
+
+  // Categorías "trabajadas" (para la barra de progreso de 6 segmentos).
+  const tieneTildes = (cat) =>
+    !!respuestas[cat] && Object.values(respuestas[cat]).some(Boolean);
+  const catsEngaged = [
+    tieneTildes("transparencia") || presionInformal,
+    tieneTildes("velocidad") || velocidadPercibida >= 1,
+    tieneTildes("normativa"),
+    tieneTildes("previsibilidad"),
+    tieneTildes("atencion"),
+    tieneTildes("tasas") || tasasOk,
+  ];
+  const prog  = catsEngaged.filter(Boolean).length;
+  // Para enviar: tipo de obra + velocidad percibida (1-5) + % de tasas válido.
+  const listo = !!tipoObra && velocidadPercibida >= 1 && velocidadPercibida <= 5 && tasasOk;
   const emailOk = email.includes("@") && email.includes(".");
 
   const handleLogin = async () => {
@@ -367,16 +413,30 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
     if (!listo) return;
     setCargando(true); setError(null);
 
+    // Cálculo v8 (fuente única: puntajeV8.js). El cliente computa los
+    // puntajes por categoría y guarda además los insumos crudos.
+    const { categorias } = puntajeReseña({
+      respuestas,
+      presionPagosInformales: presionInformal,
+      velocidadPercibida,
+      tasasPorcentaje: tasasNum,
+    });
+
     const payload = {
       municipioId:            mun.id,
-      puntajeTransparencia:   pts.transparencia,
-      puntajeVelocidad:       pts.velocidad,
-      puntajeNormativa:       pts.normativa,
-      puntajeImpuestos:       pts.impuestos,
-      puntajeAtencion:        pts.atencion,
-      puntajePrevisibilidad:  pts.previsibilidad,
-      mesesAprobacion:        meses ? parseInt(meses) : null,
-      tipoProyecto:           tipo || null,
+      tipoObra,
+      // "tasas" (v8) se guarda en la columna puntaje_impuestos (legacy).
+      puntajeTransparencia:   categorias.transparencia,
+      puntajeVelocidad:       categorias.velocidad,
+      puntajeNormativa:       categorias.normativa,
+      puntajeImpuestos:       categorias.tasas,
+      puntajeAtencion:        categorias.atencion,
+      puntajePrevisibilidad:  categorias.previsibilidad,
+      mesesAprobacion:        meses.trim() === "" ? null : parseInt(meses, 10),
+      velocidadPercibida:     velocidadPercibida || null,
+      tasasPorcentaje:        tasasNum,
+      presionPagosInformales: presionInformal,
+      respuestas,
     };
 
     const { error } = votoExistenteInfo
@@ -389,21 +449,55 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
     if (onVotado) onVotado();
   };
 
-  const Stars = ({ campo, val }) => (
-    <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 10 }}>
+  // Alterna una afirmación tildada dentro de su categoría.
+  const toggleAfirmacion = (cat, id) => {
+    setRespuestas(prev => {
+      const actual = prev[cat] || {};
+      return { ...prev, [cat]: { ...actual, [id]: !actual[id] } };
+    });
+  };
+
+  // Fila-checkbox de una afirmación (normal o crítica).
+  const renderAfirmacion = (cat, item, critica = false) => {
+    const marcada = critica ? presionInformal : !!(respuestas[cat] && respuestas[cat][item.id]);
+    const onClick = critica
+      ? () => setPresionInformal(v => !v)
+      : () => toggleAfirmacion(cat, item.id);
+    const cMark   = critica ? T.red      : T.orange;
+    const cSoft   = critica ? T.redSoft  : T.orangeSoft;
+    const cBorder = critica ? T.redMid   : T.border;
+    return (
+      <button key={item.id} onClick={onClick} style={{
+        display: "flex", alignItems: "flex-start", gap: 11, width: "100%", textAlign: "left",
+        padding: "11px 13px", marginBottom: 8, borderRadius: T.radiusSm, cursor: "pointer",
+        border: `1.5px solid ${marcada ? cMark : cBorder}`,
+        background: marcada ? cSoft : T.bgWarm,
+        fontFamily: "inherit", transition: "all 0.12s",
+      }}>
+        <span style={{
+          flexShrink: 0, width: 20, height: 20, borderRadius: 6, marginTop: 1,
+          border: `1.5px solid ${marcada ? cMark : T.borderMid}`,
+          background: marcada ? cMark : T.bg,
+          color: "#fff", fontSize: 13, fontWeight: 700, lineHeight: "18px", textAlign: "center",
+        }}>{marcada ? "✓" : ""}</span>
+        <span style={{ fontSize: 13, lineHeight: 1.5, color: marcada ? T.text : T.textMid }}>{item.texto}</span>
+      </button>
+    );
+  };
+
+  // Selector 1-5 de velocidad percibida.
+  const renderVelocidad = () => (
+    <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
       {[1, 2, 3, 4, 5].map(n => (
-        <button key={n} onClick={() => setPts(p => ({ ...p, [campo]: n }))} style={{
+        <button key={n} onClick={() => setVelocidadPercibida(n)} style={{
           width: 44, height: 44, borderRadius: T.radiusSm, cursor: "pointer",
-          border: `1.5px solid ${n <= val ? T.orange : T.border}`,
-          background: n <= val ? T.orangeSoft : T.bgWarm,
-          color: n <= val ? T.orange : T.textLight,
-          fontSize: 18, fontWeight: 700, transition: "all 0.12s",
-          transform: n <= val ? "scale(1.1)" : "scale(1)", fontFamily: "inherit"
-        }}>★</button>
+          border: `1.5px solid ${n === velocidadPercibida ? T.orange : T.border}`,
+          background: n === velocidadPercibida ? T.orangeSoft : T.bgWarm,
+          color: n === velocidadPercibida ? T.orange : T.textLight,
+          fontSize: 16, fontWeight: 700, transition: "all 0.12s",
+          transform: n === velocidadPercibida ? "scale(1.1)" : "scale(1)", fontFamily: "inherit",
+        }}>{n}</button>
       ))}
-      {val > 0 && <span style={{ fontSize: 12, color: T.textMid, alignSelf: "center", marginLeft: 4, fontStyle: "italic" }}>
-        {["", "Muy difícil", "Difícil", "Regular", "Bueno", "Excelente"][val]}
-      </span>}
     </div>
   );
 
@@ -459,37 +553,114 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
             </div>
           )}
 
-          {/* PASO 1: Encuesta */}
+          {/* PASO 1: Encuesta v8 */}
           {paso === 1 && <>
-            {votoExistenteInfo && (
-              <div style={{ padding: "10px 14px", borderRadius: T.radiusSm, background: T.blueSoft, border: `1px solid ${T.blueMid}`, color: T.blue, fontSize: 13, marginBottom: 16 }}>
-                Estás actualizando tu calificación anterior. Los nuevos puntajes reemplazarán los anteriores.
+            {/* 1 · Tipo de obra (obligatorio, define la identidad del voto) */}
+            <div style={{ marginBottom: 22 }}>
+              <p style={{ margin: "0 0 4px", fontSize: 11, color: T.textLight, letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700 }}>1 · Tipo de obra</p>
+              <p style={{ margin: "0 0 10px", fontSize: 13, color: T.textMid, lineHeight: 1.5 }}>Elegí el tipo de obra que evaluás. Cada tipo se califica por separado.</p>
+              <select value={tipoObra} onChange={e => setTipoObra(e.target.value)} style={{ width: "100%", padding: "12px 14px", borderRadius: T.radiusSm, border: `1.5px solid ${tipoObra ? T.orange : T.border}`, background: tipoObra ? T.orangeSoft : T.bgWarm, color: tipoObra ? T.text : T.textLight, fontSize: 14, fontFamily: "inherit" }}>
+                <option value="">Seleccioná un tipo de obra…</option>
+                {TIPOS_OBRA.map(t => <option key={t.slug} value={t.slug}>{t.label}</option>)}
+              </select>
+            </div>
+
+            {!tipoObra && (
+              <div style={{ padding: "16px 18px", borderRadius: T.radius, background: T.bgWarm, border: `1px dashed ${T.borderMid}`, color: T.textMid, fontSize: 13, lineHeight: 1.6 }}>
+                Para continuar, elegí primero el tipo de obra.
               </div>
             )}
-            {PREGUNTAS.map(p => (
-              <div key={p.key} style={{ marginBottom: 22 }}>
-                <p style={{ margin: 0, fontSize: 14, color: T.text, fontWeight: 600 }}>{p.emoji} {p.label}</p>
-                <Stars campo={p.key} val={pts[p.key]} />
+
+            {tipoObra && cargandoVotoExistente && (
+              <div style={{ padding: "16px 18px", borderRadius: T.radius, background: T.bgWarm, border: `1px solid ${T.border}`, color: T.textMid, fontSize: 13 }}>
+                Cargando…
               </div>
-            ))}
-            <div style={{ padding: 18, borderRadius: T.radius, background: T.bgWarm, border: `1px solid ${T.border}`, marginTop: 8, marginBottom: 24 }}>
-              <p style={{ margin: "0 0 14px", fontSize: 13, fontWeight: 600, color: T.text }}>Datos opcionales</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
-                <select value={tipo} onChange={e => setTipo(e.target.value)} style={{ width: "100%", padding: "10px 14px", borderRadius: T.radiusSm, border: `1px solid ${T.border}`, background: T.bg, color: tipo ? T.text : T.textLight, fontSize: 13, fontFamily: "inherit" }}>
-                  <option value="">Tipo de proyecto</option>
-                  {["Vivienda Unifamiliar", "Vivienda Multifamiliar", "Industrial y Logístico", "Comercial y Servicios", "Desarrollo Urbanístico", "Otro"].map(o => <option key={o}>{o}</option>)}
-                </select>
-                <div>
-                  <input type="number" placeholder="Meses promedio para obtención de permiso de construcción" value={meses} onChange={e => setMeses(e.target.value)}
-                    style={{ width: "100%", padding: "10px 14px", borderRadius: T.radiusSm, border: `1px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }}
-                  />
-                  <style>{`input[type="number"]::placeholder { font-size: 0.75rem; }`}</style>
+            )}
+
+            {tipoObra && !cargandoVotoExistente && <>
+              {votoExistenteInfo && (
+                <div style={{ padding: "10px 14px", borderRadius: T.radiusSm, background: T.blueSoft, border: `1px solid ${T.blueMid}`, color: T.blue, fontSize: 13, marginBottom: 16 }}>
+                  Ya calificaste este municipio para este tipo de obra. Estás editando tu reseña: los nuevos valores reemplazarán los anteriores.
                 </div>
-              </div>
-            </div>
-            <BtnPrimary full onClick={handleEnviar} disabled={!listo || cargando || cargandoVotoExistente}>
-              {cargando ? "Enviando..." : listo ? "Enviar mi calificación →" : `Completá todas las categorías (${prog}/6)`}
-            </BtnPrimary>
+              )}
+
+              {CATEGORIAS.map((c, idx) => (
+                <div key={c.key} style={{ marginBottom: 24 }}>
+                  <p style={{ margin: "0 0 10px", fontSize: 14, color: T.text, fontWeight: 700 }}>{idx + 2} · {c.label}</p>
+
+                  {/* Afirmaciones de la categoría */}
+                  {(AFIRMACIONES[c.key] || []).map(item => renderAfirmacion(c.key, item))}
+
+                  {/* Bloque crítico al final de Transparencia */}
+                  {c.key === "transparencia" && (
+                    <div style={{ marginTop: 4 }}>
+                      {renderAfirmacion("transparencia", AFIRMACION_CRITICA, true)}
+                      <p style={{ margin: "2px 2px 0", fontSize: 11.5, color: T.red, lineHeight: 1.5 }}>
+                        Si marcás esta afirmación, la categoría Transparencia se fija en 1 estrella.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Bloque cuantitativo de Velocidad */}
+                  {c.key === "velocidad" && (
+                    <div style={{ marginTop: 14, padding: 16, borderRadius: T.radius, background: T.bgWarm, border: `1px solid ${T.border}` }}>
+                      <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 600, color: T.text, lineHeight: 1.5 }}>{PREGUNTA_MESES}</p>
+                      <input type="number" min="0" placeholder="Cantidad de meses" value={meses} onChange={e => setMeses(e.target.value)}
+                        style={{ width: "100%", padding: "10px 14px", borderRadius: T.radiusSm, border: `1px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }}
+                      />
+                      <p style={{ margin: "6px 0 0", fontSize: 11.5, color: T.textLight, fontStyle: "italic" }}>Este dato es estadístico y no afecta tu puntaje.</p>
+
+                      <p style={{ margin: "16px 0 6px", fontSize: 13, fontWeight: 600, color: T.text, lineHeight: 1.5 }}>{PREGUNTA_VELOCIDAD_PERCIBIDA}</p>
+                      {renderVelocidad()}
+
+                      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 14, fontSize: 11.5 }}>
+                        <thead>
+                          <tr style={{ color: T.textLight, textAlign: "left" }}>
+                            <th style={{ padding: "4px 6px", fontWeight: 600 }}>Plazo</th>
+                            <th style={{ padding: "4px 6px", fontWeight: 600, textAlign: "center" }}>Puntaje</th>
+                            <th style={{ padding: "4px 6px", fontWeight: 600 }}>Interpretación</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {cuadroVelocidad(tipoObra).map(f => (
+                            <tr key={f.puntaje} style={{ borderTop: `1px solid ${T.border}`, color: T.textMid }}>
+                              <td style={{ padding: "5px 6px" }}>{f.rango}</td>
+                              <td style={{ padding: "5px 6px", textAlign: "center", fontWeight: 700, color: T.text }}>{f.puntaje}</td>
+                              <td style={{ padding: "5px 6px" }}>{f.interpretacion}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <p style={{ margin: "10px 0 0", fontSize: 11.5, color: T.textLight, lineHeight: 1.5 }}>{TEXTO_VELOCIDAD}</p>
+                    </div>
+                  )}
+
+                  {/* Bloque cuantitativo de Tasas */}
+                  {c.key === "tasas" && (
+                    <div style={{ marginTop: 14, padding: 16, borderRadius: T.radius, background: T.bgWarm, border: `1px solid ${T.border}` }}>
+                      <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 600, color: T.text, lineHeight: 1.5 }}>{PREGUNTA_TASAS}</p>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <input type="number" min="0" step="0.1" placeholder="Ej: 2.5" value={tasasPct} onChange={e => setTasasPct(e.target.value)}
+                          style={{ width: "100%", padding: "10px 14px", borderRadius: T.radiusSm, border: `1.5px solid ${tasasOk ? T.orange : T.border}`, background: tasasOk ? T.orangeSoft : T.bg, color: T.text, fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }}
+                        />
+                        <span style={{ fontSize: 15, fontWeight: 700, color: T.textMid }}>%</span>
+                      </div>
+                      <p style={{ margin: "6px 0 0", fontSize: 11.5, color: T.textLight, lineHeight: 1.5 }}>{NOTA_TASAS}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              <BtnPrimary full onClick={handleEnviar} disabled={!listo || cargando}>
+                {cargando
+                  ? "Enviando..."
+                  : !listo
+                    ? "Completá tipo de obra, velocidad y % de tasas"
+                    : votoExistenteInfo
+                      ? "Actualizar mi reseña →"
+                      : "Enviar mi reseña →"}
+              </BtnPrimary>
+            </>}
           </>}
 
           {/* PASO 2: Confirmación */}

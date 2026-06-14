@@ -43,6 +43,16 @@ export const PESOS = {
   tasas:          0.15,
 };
 
+// Etiquetas visibles de cada categoría (orden de presentación en el form).
+export const CATEGORIAS = [
+  { key: "transparencia",  label: "Transparencia e integridad" },
+  { key: "velocidad",      label: "Velocidad de aprobación" },
+  { key: "normativa",      label: "Claridad y accesibilidad de la normativa" },
+  { key: "previsibilidad", label: "Previsibilidad y consistencia de las decisiones" },
+  { key: "atencion",       label: "Atención al público" },
+  { key: "tasas",          label: "Razonabilidad de las tasas municipales" },
+];
+
 // Mapa categoría v8 → columna de puntaje en `encuestas` (para Fase 4).
 export const COLUMNA_PUNTAJE = {
   transparencia:  "puntaje_transparencia",

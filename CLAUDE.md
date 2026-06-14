@@ -77,7 +77,7 @@ NUNCA una vista que cruce empresa con el contenido/dirección del voto.
 | 0 | Diagnóstico (tabla, trigger, form, afirmaciones inexistentes hoy) | ✅ |
 | 1 | DB: columnas `tipo_obra`/`velocidad_percibida`/`tasas_porcentaje`/`presion_pagos_informales`/`respuestas` + índice único 3-cols (0008) | ✅ (corrida en Supabase) |
 | 2 | Catálogo central v8 (`src/lib/puntajeV8.js`: pesos, fórmulas, afirmaciones textuales) | ✅ |
-| 3 | Formulario (tipo_obra 1er paso, afirmaciones desde config, crítica, velocidad percibida+cuadro, tasas) + swap del índice/RPC `votar` | ⬜ |
+| 3 | Formulario (tipo_obra 1er paso, afirmaciones desde config, crítica, velocidad percibida+cuadro, tasas) + swap del índice/RPC `votar` (0009) | ✅ |
 | 4 | Recálculo v8 por reseña + trigger agregación 2 niveles + filtro de mapa por tipo (UMBRAL_MIN_RESEÑAS=3, vía RPC/vista SECURITY DEFINER) | ⬜ |
 
 **Pesos v8:** Transparencia 25%, Velocidad 25%, Normativa 10%, Previsibilidad 15%,
@@ -92,11 +92,22 @@ Atención 10%, Tasas 15%. (Velocidad y Tasas: 60% cuantitativo + 40% cuestionari
   - `loginConEmail(email)` — **gate centralizado**: verifica whitelist vía RPC
     `email_autorizado` y solo entonces manda el magic link. Lo usan App.jsx y ModalCalificar.
     Devuelve `{error:null}` | `{error:'no_autorizado'}` | `{error:'envio'}`.
-  - `yaVoto(municipioId)` — usa RPC `mi_voto` (resuelve por empresa_id).
-  - `guardarVotoEmpresa(payload)` (interno) — llama RPC `votar`. `enviarVoto` y
+  - `yaVoto(municipioId, tipoObra=null)` — usa RPC `mi_voto(p_municipio_id, p_tipo_obra)`
+    (resuelve por empresa_id + tipo_obra). Devuelve `votoActual` con los campos v8
+    (respuestas, presionPagosInformales, velocidadPercibida, tasasPorcentaje, meses).
+  - `guardarVotoEmpresa(payload)` (interno) — llama RPC `votar` con la firma v8 (tipo_obra
+    + puntajes numeric + meses/velocidad_percibida/tasas/presion/respuestas). `enviarVoto` y
     `actualizarVoto` delegan ambos acá (votoId se ignora; la identidad es la empresa).
-- `src/App.jsx` — maneja login y muestra mensaje "no habilitado". Form de voto:
-  el `<select>` de tipo de proyecto está ~línea 485.
+- `src/lib/puntajeV8.js` — **fuente única** del v8: `TIPOS_OBRA`, `CATEGORIAS`, `PESOS`,
+  `AFIRMACIONES` (texto exacto), `AFIRMACION_CRITICA`, cuadros de velocidad, textos
+  obligatorios y fórmulas puras (`puntajeReseña`, etc.). El form lee de acá; NO duplicar.
+- `src/App.jsx` — login + form de voto v8 (`ModalEncuesta`): paso 1 = tipo_obra (obligatorio,
+  define la identidad del voto), luego las 6 categorías con afirmaciones-checkbox, afirmación
+  crítica al final de Transparencia, bloque cuantitativo de Velocidad (meses estadístico +
+  velocidad_percibida 1-5 + cuadro orientativo) y de Tasas (% sobre costo directo). El cliente
+  calcula los puntajes por categoría con `puntajeReseña` y guarda también los insumos crudos.
+  ⚠️ `PREGUNTAS`/`CatBar`/Metodología (panel detalle e índice) siguen con pesos VIEJOS: se
+  ajustan en Fase 4. Obligatorios para enviar: tipo_obra + velocidad_percibida + % de tasas.
 - `src/components/ModalCalificar.jsx` — usa el gate centralizado `loginConEmail`.
 
 **Migraciones SQL (correr en Supabase SQL Editor, en orden):**
@@ -124,6 +135,14 @@ Atención 10%, Tasas 15%. (Velocidad y Tasas: 60% cuantitativo + 40% cuestionari
   (boolean, afirmación crítica), `respuestas` (jsonb), e índice único
   `encuestas_empresa_municipio_tipoobra_key (empresa_id, municipio_id, tipo_obra)`.
   NO borra el índice viejo de 2 cols ni toca el RPC `votar` (eso va en Fase 3).
+- `supabase/migrations/0009_votar_por_tipo_obra.sql` — **Fase 3 del v8** (el "swap"):
+  (1) `puntaje_*` → `numeric` (los puntajes v8 son fraccionarios, no se pueden truncar);
+  (2) DROP del índice viejo `encuestas_empresa_municipio_key` (2 cols); la unicidad la da
+  ahora el de 3 cols de 0008; (3) reescribe `votar` con firma v8 (recibe `p_tipo_obra` + los
+  campos nuevos, `ON CONFLICT (empresa_id, municipio_id, tipo_obra)`, ya NO escribe
+  `tipo_proyecto`/`comentario`; lanza `tipo_obra_requerido` si viene NULL); (4) reescribe
+  `mi_voto(p_municipio_id, p_tipo_obra)` para filtrar por tipo y devolver los campos v8.
+  No borra reseñas; las legacy quedan con `tipo_obra` NULL.
 - `supabase/seed/empresas_cedu_ejemplo.sql` — ejemplo de carga masiva (on conflict do nothing).
 
 ---
@@ -149,9 +168,14 @@ con booleano `ha_votado` (vía `EXISTS` sobre `encuestas.empresa_id = ea.id`). E
 `revoke all from anon, authenticated` → no sale por REST; solo `service_role` (SQL Editor)
 la lee. Los votos legacy (empresa_id NULL) no matchean ninguna empresa real.
 
-**RPCs (todas SECURITY DEFINER):** `email_autorizado(text)`, `votar(...)`, `mi_voto(uuid)`.
+**RPCs (todas SECURITY DEFINER):** `email_autorizado(text)`,
+`votar(uuid, text, numeric×6, int, int, numeric, boolean, jsonb)` (firma v8 tras 0009),
+`mi_voto(uuid, text)` (firma v8 tras 0009).
 - En `mi_voto` y `votar`, resolver la empresa con alias de tabla
   (`select ea.id ... from empresas_autorizadas ea`) para evitar `column "id" is ambiguous`.
+- `votar` (v8): `ON CONFLICT (empresa_id, municipio_id, tipo_obra)`; lanza `tipo_obra_requerido`
+  si `p_tipo_obra` es NULL/''. Ya NO escribe `tipo_proyecto` ni `comentario`.
+- `puntaje_*` en `encuestas` son `numeric` desde 0009 (puntajes v8 fraccionarios).
 
 **Triggers en `encuestas`:** `after_encuesta_insert` / `trigger_recalcular_puntaje`
 (recomputan agregados de `municipios` desde cero en INSERT OR UPDATE → UPSERT-safe,
@@ -164,13 +188,11 @@ sin doble conteo).
 (label legacy de 0006) queda intacto y SEPARADO de `tipo_obra` (slug).
 
 **Constraints relevantes:**
-- `encuestas_empresa_municipio_key (empresa_id, municipio_id)` UNIQUE — modelo nuevo.
-  ⚠️ Se mantiene SOLO hasta la Fase 3: ahí se dropea y el ON CONFLICT del RPC `votar`
-  pasa a 3 columnas (ver índice siguiente).
+- ~~`encuestas_empresa_municipio_key (empresa_id, municipio_id)` UNIQUE~~ —
+  **ELIMINADO en 0009** (el "swap"). La unicidad la da ahora el índice de 3 cols.
 - `encuestas_empresa_municipio_tipoobra_key (empresa_id, municipio_id, tipo_obra)` UNIQUE
-  (tras 0008) — "un voto por tipo de obra". NULLS DISTINCT: legacy no colisiona. Todavía
-  NO impone unicidad mientras `tipo_obra` siga NULL en votos nuevos (antes de Fase 3);
-  esa garantía la da el índice de 2 cols hasta que se haga el swap.
+  (tras 0008) — "un voto por tipo de obra". Es el ON CONFLICT del RPC `votar` desde 0009.
+  NULLS DISTINCT: legacy (tipo_obra NULL) no colisiona.
 - `encuestas_tipo_obra_check` (tras 0008) — acepta los 6 SLUGS o NULL: 'vivienda_unifamiliar',
   'vivienda_multifamiliar','industrial_logistico','comercial_servicios',
   'desarrollo_urbanistico','otro'.

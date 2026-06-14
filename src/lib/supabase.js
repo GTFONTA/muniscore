@@ -64,15 +64,19 @@ export async function getEncuestasMunicipio(municipioId) {
   return { data, error };
 }
 
-// ── Verifica si la EMPRESA ya votó en este municipio ────────
+// ── Verifica si la EMPRESA ya votó este municipio PARA ESE TIPO ──
 // Resuelve el voto por empresa_id (vía RPC mi_voto), no por usuario_id,
 // así sigue precargando aunque el voto se haya emitido con un mail
-// anterior (herencia, Fase 4).
-export async function yaVoto(municipioId) {
+// anterior (herencia). El tipo de obra es parte de la identidad del
+// voto en v8: una reseña por (empresa, municipio, tipo_obra).
+export async function yaVoto(municipioId, tipoObra = null) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { existe: false, votoId: null, votoActual: null };
 
-  const { data, error } = await supabase.rpc('mi_voto', { p_municipio_id: municipioId });
+  const { data, error } = await supabase.rpc('mi_voto', {
+    p_municipio_id: municipioId,
+    p_tipo_obra:    tipoObra,
+  });
   if (error) {
     console.error('Error al verificar voto:', error.message);
     return { existe: false, votoId: null, votoActual: null };
@@ -86,15 +90,18 @@ export async function yaVoto(municipioId) {
     existe: true,
     votoId: row.id,
     votoActual: {
-      transparencia:  row.puntaje_transparencia,
-      velocidad:      row.puntaje_velocidad,
-      normativa:      row.puntaje_normativa,
-      impuestos:      row.puntaje_impuestos,
-      atencion:       row.puntaje_atencion,
-      previsibilidad: row.puntaje_previsibilidad,
-      meses:          row.meses_aprobacion ?? "",
-      tipo:           row.tipo_proyecto ?? "",
-      comentario:     row.comentario ?? "",
+      tipoObra:               row.tipo_obra ?? "",
+      transparencia:          row.puntaje_transparencia,
+      velocidad:              row.puntaje_velocidad,
+      normativa:              row.puntaje_normativa,
+      impuestos:              row.puntaje_impuestos,
+      atencion:               row.puntaje_atencion,
+      previsibilidad:         row.puntaje_previsibilidad,
+      meses:                  row.meses_aprobacion ?? "",
+      velocidadPercibida:     row.velocidad_percibida ?? "",
+      tasasPorcentaje:        row.tasas_porcentaje ?? "",
+      presionPagosInformales: row.presion_pagos_informales ?? false,
+      respuestas:             row.respuestas ?? null,
     }
   };
 }
@@ -108,6 +115,7 @@ export async function yaVoto(municipioId) {
 // identidad es la empresa, no la fila ni el auth user.
 async function guardarVotoEmpresa({
   municipioId,
+  tipoObra,
   puntajeTransparencia,
   puntajeVelocidad,
   puntajeNormativa,
@@ -115,25 +123,31 @@ async function guardarVotoEmpresa({
   puntajeAtencion,
   puntajePrevisibilidad,
   mesesAprobacion,
-  tipoProyecto,
-  comentario,
+  velocidadPercibida,
+  tasasPorcentaje,
+  presionPagosInformales,
+  respuestas,
 }) {
   const { data, error } = await supabase.rpc('votar', {
-    p_municipio_id:   municipioId,
-    p_transparencia:  puntajeTransparencia,
-    p_velocidad:      puntajeVelocidad,
-    p_normativa:      puntajeNormativa,
-    p_impuestos:      puntajeImpuestos,
-    p_atencion:       puntajeAtencion,
-    p_previsibilidad: puntajePrevisibilidad,
-    p_meses:          mesesAprobacion || null,
-    p_tipo:           tipoProyecto || null,
-    p_comentario:     comentario || null,
+    p_municipio_id:             municipioId,
+    p_tipo_obra:                tipoObra,
+    p_transparencia:            puntajeTransparencia,
+    p_velocidad:                puntajeVelocidad,
+    p_normativa:                puntajeNormativa,
+    p_impuestos:                puntajeImpuestos,
+    p_atencion:                 puntajeAtencion,
+    p_previsibilidad:           puntajePrevisibilidad,
+    p_meses:                    mesesAprobacion ?? null,
+    p_velocidad_percibida:      velocidadPercibida ?? null,
+    p_tasas_porcentaje:         tasasPorcentaje ?? null,
+    p_presion_pagos_informales: presionPagosInformales ?? null,
+    p_respuestas:               respuestas ?? null,
   });
 
   if (error) {
     console.error('Error al guardar voto:', error.message);
-    // El RPC lanza 'no_autorizado' / 'no_autenticado' como excepción.
+    // El RPC lanza 'no_autorizado' / 'no_autenticado' / 'tipo_obra_requerido'
+    // como excepción.
     if (error.message && error.message.includes('no_autorizado')) {
       return { data: null, error: 'no_autorizado' };
     }
