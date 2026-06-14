@@ -292,6 +292,19 @@ export async function getDocumentos(municipioId) {
   return { data, error };
 }
 
+// ── Puntajes por municipio para UN tipo de obra (filtro del mapa) ──
+// Llama al RPC `puntajes_por_tipo` (SECURITY DEFINER). Devuelve solo
+// agregados por municipio (promedios + conteo), nunca contenido por
+// reseña. Solo incluye municipios con >= `umbral` reseñas de ese tipo.
+export async function getPuntajesPorTipo(tipoObra, umbral = 3) {
+  const { data, error } = await supabase.rpc('puntajes_por_tipo', {
+    p_tipo_obra: tipoObra,
+    p_umbral:    umbral,
+  });
+  if (error) console.error('Error al cargar puntajes por tipo:', error.message);
+  return { data, error };
+}
+
 // ── Meses promedio de aprobación por municipio ───────────────
 export async function getMesesPromedio() {
   const { data, error } = await supabase

@@ -21,6 +21,7 @@ import {
   yaVoto,
   enviarContacto,
   getMesesPromedio,
+  getPuntajesPorTipo,
 } from './lib/supabase';
 import MapaPoligonos from './components/MapaPoligonos';
 import NoticiasCarrusel from './components/NoticiasCarrusel';
@@ -36,6 +37,7 @@ import {
   PREGUNTA_TASAS,
   NOTA_TASAS,
   puntajeReseña,
+  UMBRAL_MIN_RESENAS,
 } from './lib/puntajeV8';
 
 // ─────────────────────────────────────────────
@@ -82,11 +84,11 @@ const T = {
 // ─────────────────────────────────────────────
 const PREGUNTAS = [
   { key: "transparencia",  emoji: "🔍", label: "Transparencia e integridad",                    peso: 0.25, campo_db: "puntaje_transparencia"  },
-  { key: "velocidad",      emoji: "⚡", label: "Velocidad de aprobación de planos y permisos",  peso: 0.20, campo_db: "puntaje_velocidad"      },
-  { key: "normativa",      emoji: "📋", label: "Claridad y accesibilidad de las normativas",    peso: 0.20, campo_db: "puntaje_normativa"      },
+  { key: "velocidad",      emoji: "⚡", label: "Velocidad de aprobación de planos y permisos",  peso: 0.25, campo_db: "puntaje_velocidad"      },
+  { key: "normativa",      emoji: "📋", label: "Claridad y accesibilidad de las normativas",    peso: 0.10, campo_db: "puntaje_normativa"      },
   { key: "previsibilidad", emoji: "🎯", label: "Previsibilidad y consistencia de los procesos", peso: 0.15, campo_db: "puntaje_previsibilidad"  },
   { key: "atencion",       emoji: "🤝", label: "Atención al público en dependencias municipales",peso: 0.10, campo_db: "puntaje_atencion"       },
-  { key: "impuestos",      emoji: "💰", label: "Razonabilidad de tasas e impuestos municipales",peso: 0.10, campo_db: "puntaje_impuestos"      },
+  { key: "impuestos",      emoji: "💰", label: "Razonabilidad de tasas e impuestos municipales",peso: 0.15, campo_db: "puntaje_impuestos"      },
 ];
 
 // ─────────────────────────────────────────────
@@ -825,6 +827,8 @@ export default function App() {
   const [activo, setActivo]         = useState(null);
   const [vista, setVista]           = useState("mapa");
   const [filtro, setFiltro]         = useState("Todos");
+  const [tipoObraFiltro, setTipoObraFiltro] = useState("");   // "" = Todas
+  const [puntajesTipo, setPuntajesTipo]     = useState(null); // { municipio_id: row } | null
   const [usuario, setUsuario]       = useState(null);
   const [articulos, setArticulos]   = useState([]);
   const [cargando, setCargando]     = useState(true);
@@ -925,6 +929,42 @@ export default function App() {
     `;
     document.head.appendChild(s);
   }, []);
+
+  // Filtro del mapa por tipo de obra: trae los puntajes por tipo (RPC)
+  // solo cuando hay un tipo seleccionado. "" = Todas → índice general.
+  useEffect(() => {
+    if (!tipoObraFiltro) { setPuntajesTipo(null); return; }
+    let cancelado = false;
+    (async () => {
+      const { data } = await getPuntajesPorTipo(tipoObraFiltro, UMBRAL_MIN_RESENAS);
+      if (cancelado) return;
+      const map = {};
+      (data || []).forEach(r => { map[r.municipio_id] = r; });
+      setPuntajesTipo(map);
+    })();
+    return () => { cancelado = true; };
+  }, [tipoObraFiltro]);
+
+  // Municipios que se pasan al mapa: con "Todas" es el índice general;
+  // con un tipo, se reemplaza el puntaje por el de ese tipo y los que no
+  // llegan al umbral quedan en estado neutro ("sin datos suficientes").
+  const municipiosMapa = !tipoObraFiltro
+    ? municipios
+    : municipios.map(m => {
+        const r = puntajesTipo && puntajesTipo[m.id];
+        if (!r) return { ...m, puntaje_global: 0, total_votos: 0 };
+        return {
+          ...m,
+          puntaje_global:         Number(r.puntaje_global),
+          total_votos:            r.total_votos,
+          puntaje_transparencia:  Number(r.puntaje_transparencia),
+          puntaje_velocidad:      Number(r.puntaje_velocidad),
+          puntaje_normativa:      Number(r.puntaje_normativa),
+          puntaje_previsibilidad: Number(r.puntaje_previsibilidad),
+          puntaje_atencion:       Number(r.puntaje_atencion),
+          puntaje_impuestos:      Number(r.puntaje_impuestos),
+        };
+      });
 
   const regiones = ["Todos", "CABA", "GBA Norte", "GBA Oeste", "GBA Sur"];
   const filtrados = filtro === "Todos" ? municipios : municipios.filter(m => m.region === filtro);
@@ -1054,9 +1094,29 @@ export default function App() {
               👆 Hacé clic en tu municipio para ver su estadística y puntuarlo
             </div>
           </div>
+          {/* Filtro por tipo de obra */}
+          <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8, padding: "0 16px" }}>
+            {[{ slug: "", label: "Todas" }, ...TIPOS_OBRA].map(t => {
+              const sel = tipoObraFiltro === t.slug;
+              return (
+                <button key={t.slug || "todas"} onClick={() => setTipoObraFiltro(t.slug)} style={{
+                  padding: "0.45rem 0.95rem", borderRadius: 999, cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+                  border: `1px solid ${sel ? T.orange : T.border}`,
+                  background: sel ? T.orangeSoft : T.bg,
+                  color: sel ? T.orange : T.textMid,
+                  fontWeight: sel ? 700 : 500, transition: "all 0.12s",
+                }}>{t.label}</button>
+              );
+            })}
+          </div>
+          {tipoObraFiltro && (
+            <p style={{ textAlign: "center", fontSize: 12, color: T.textLight, margin: "8px 16px 0" }}>
+              Mostrando solo municipios con al menos {UMBRAL_MIN_RESENAS} reseñas de este tipo. El resto aparece sin color (datos insuficientes).
+            </p>
+          )}
           <div style={{ width: '100%', position: 'relative' }}>
             <MapaPoligonos
-              municipios={municipios}
+              municipios={municipiosMapa}
               onSeleccionar={(mun) => setActivo(mun)}
             />
             {activo && (
@@ -1166,7 +1226,7 @@ export default function App() {
           </div>
           <div style={{ maxWidth: 860, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
             {[
-              { icon: "⚖️", titulo: "¿Cómo se calcula el índice?", texto: `Transparencia (25%) · Velocidad de aprobación (20%) · Claridad normativa (20%) · Previsibilidad (15%) · Atención al público (10%) · Carga impositiva (10%). El promedio ponderado de todas las encuestas válidas genera el índice de cada municipio.` },
+              { icon: "⚖️", titulo: "¿Cómo se calcula el índice?", texto: `Transparencia (25%) · Velocidad de aprobación (25%) · Claridad normativa (10%) · Previsibilidad (15%) · Atención al público (10%) · Razonabilidad de tasas (15%). El índice de cada municipio se calcula promediando primero las reseñas de cada desarrollador y luego entre desarrolladores (un desarrollador = un voto).` },
               { icon: "🙋", titulo: "¿Quién puede participar?", texto: "Desarrolladores, constructores, arquitectos, ingenieros y vecinos que construyeron su vivienda. Recomendamos calificar solo municipios donde hayas trabajado, aunque no hay restricción formal." },
               { icon: "🛡️", titulo: "¿Cómo se evitan votos duplicados?", texto: "Cada email puede votar una sola vez por municipio. El sistema valida el email antes de registrar el voto." },
               { icon: "🔒", titulo: "Privacidad de tus datos", texto: "Almacenamos únicamente el hash de tu email, la fecha del voto y los puntajes. Cumplimos con la Ley 25.326 de Protección de Datos Personales de la República Argentina." },

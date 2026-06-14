@@ -78,7 +78,7 @@ NUNCA una vista que cruce empresa con el contenido/dirección del voto.
 | 1 | DB: columnas `tipo_obra`/`velocidad_percibida`/`tasas_porcentaje`/`presion_pagos_informales`/`respuestas` + índice único 3-cols (0008) | ✅ (corrida en Supabase) |
 | 2 | Catálogo central v8 (`src/lib/puntajeV8.js`: pesos, fórmulas, afirmaciones textuales) | ✅ |
 | 3 | Formulario (tipo_obra 1er paso, afirmaciones desde config, crítica, velocidad percibida+cuadro, tasas) + swap del índice/RPC `votar` (0009) | ✅ |
-| 4 | Recálculo v8 por reseña + trigger agregación 2 niveles + filtro de mapa por tipo (UMBRAL_MIN_RESEÑAS=3, vía RPC/vista SECURITY DEFINER) | ⬜ |
+| 4 | Recálculo v8 por reseña + trigger agregación 2 niveles + filtro de mapa por tipo (UMBRAL_MIN_RESEÑAS=3, vía RPC/vista SECURITY DEFINER) | ✅ |
 
 **Pesos v8:** Transparencia 25%, Velocidad 25%, Normativa 10%, Previsibilidad 15%,
 Atención 10%, Tasas 15%. (Velocidad y Tasas: 60% cuantitativo + 40% cuestionario.)
@@ -98,6 +98,8 @@ Atención 10%, Tasas 15%. (Velocidad y Tasas: 60% cuantitativo + 40% cuestionari
   - `guardarVotoEmpresa(payload)` (interno) — llama RPC `votar` con la firma v8 (tipo_obra
     + puntajes numeric + meses/velocidad_percibida/tasas/presion/respuestas). `enviarVoto` y
     `actualizarVoto` delegan ambos acá (votoId se ignora; la identidad es la empresa).
+  - `getPuntajesPorTipo(tipoObra, umbral=3)` — llama RPC `puntajes_por_tipo` para el filtro
+    de mapa por tipo de obra (solo agregados por municipio; nunca contenido por reseña).
 - `src/lib/puntajeV8.js` — **fuente única** del v8: `TIPOS_OBRA`, `CATEGORIAS`, `PESOS`,
   `AFIRMACIONES` (texto exacto), `AFIRMACION_CRITICA`, cuadros de velocidad, textos
   obligatorios y fórmulas puras (`puntajeReseña`, etc.). El form lee de acá; NO duplicar.
@@ -106,8 +108,11 @@ Atención 10%, Tasas 15%. (Velocidad y Tasas: 60% cuantitativo + 40% cuestionari
   crítica al final de Transparencia, bloque cuantitativo de Velocidad (meses estadístico +
   velocidad_percibida 1-5 + cuadro orientativo) y de Tasas (% sobre costo directo). El cliente
   calcula los puntajes por categoría con `puntajeReseña` y guarda también los insumos crudos.
-  ⚠️ `PREGUNTAS`/`CatBar`/Metodología (panel detalle e índice) siguen con pesos VIEJOS: se
-  ajustan en Fase 4. Obligatorios para enviar: tipo_obra + velocidad_percibida + % de tasas.
+  Obligatorios para enviar: tipo_obra + velocidad_percibida + % de tasas. En la vista mapa hay
+  un **filtro por tipo de obra** (pills "Todas" + 6 tipos): al elegir un tipo llama a
+  `getPuntajesPorTipo` y recolorea con `municipiosMapa` (los que no llegan al umbral quedan
+  neutros). `PREGUNTAS` (pesos del panel detalle/CatBar) y el texto de Metodología ya usan los
+  pesos v8 (25/25/10/15/10/15) tras Fase 4.
 - `src/components/ModalCalificar.jsx` — usa el gate centralizado `loginConEmail`.
 
 **Migraciones SQL (correr en Supabase SQL Editor, en orden):**
@@ -143,6 +148,18 @@ Atención 10%, Tasas 15%. (Velocidad y Tasas: 60% cuantitativo + 40% cuestionari
   `tipo_proyecto`/`comentario`; lanza `tipo_obra_requerido` si viene NULL); (4) reescribe
   `mi_voto(p_municipio_id, p_tipo_obra)` para filtrar por tipo y devolver los campos v8.
   No borra reseñas; las legacy quedan con `tipo_obra` NULL.
+- `supabase/migrations/0010_recalculo_v8_dos_niveles.sql` — **Fase 4 (parte 1)**. Reescribe
+  `recalcular_puntajes(uuid)` (la función que colorea el mapa): pesos v8 (25/25/10/15/10/15)
+  + agregación en DOS niveles (promedio por desarrollador → promedio entre desarrolladores).
+  `total_votos` = cantidad de desarrolladores. Reseñas legacy con `empresa_id` NULL: cada una
+  cuenta como su propio desarrollador (`coalesce(empresa_id::text,'r:'||id::text)`). NO toca
+  `encuestas` ni el 2º trigger (columnas vestigiales `puntaje_promedio`/`total_evaluaciones`).
+  Al final hace un recálculo único de todos los municipios.
+- `supabase/migrations/0011_puntajes_por_tipo.sql` — **Fase 4 (parte 2)**. RPC
+  `puntajes_por_tipo(p_tipo_obra, p_umbral=3)` (SECURITY DEFINER) para el filtro de mapa:
+  devuelve por municipio el puntaje calculado SOLO con reseñas de ese tipo (promedio plano:
+  para un tipo, cada empresa aporta ≤1 reseña por el índice único), y SOLO si llega al umbral.
+  Devuelve solo agregados (promedios + conteo), nunca contenido por reseña. Grant a anon+auth.
 - `supabase/seed/empresas_cedu_ejemplo.sql` — ejemplo de carga masiva (on conflict do nothing).
 
 ---
@@ -170,16 +187,24 @@ la lee. Los votos legacy (empresa_id NULL) no matchean ninguna empresa real.
 
 **RPCs (todas SECURITY DEFINER):** `email_autorizado(text)`,
 `votar(uuid, text, numeric×6, int, int, numeric, boolean, jsonb)` (firma v8 tras 0009),
-`mi_voto(uuid, text)` (firma v8 tras 0009).
+`mi_voto(uuid, text)` (firma v8 tras 0009),
+`puntajes_por_tipo(text, int)` (tras 0011 — filtro de mapa por tipo, grant a anon+auth,
+devuelve solo agregados por municipio si llega al umbral; nunca contenido por reseña).
 - En `mi_voto` y `votar`, resolver la empresa con alias de tabla
   (`select ea.id ... from empresas_autorizadas ea`) para evitar `column "id" is ambiguous`.
 - `votar` (v8): `ON CONFLICT (empresa_id, municipio_id, tipo_obra)`; lanza `tipo_obra_requerido`
   si `p_tipo_obra` es NULL/''. Ya NO escribe `tipo_proyecto` ni `comentario`.
 - `puntaje_*` en `encuestas` son `numeric` desde 0009 (puntajes v8 fraccionarios).
 
-**Triggers en `encuestas`:** `after_encuesta_insert` / `trigger_recalcular_puntaje`
-(recomputan agregados de `municipios` desde cero en INSERT OR UPDATE → UPSERT-safe,
-sin doble conteo).
+**Triggers en `encuestas`:**
+- `after_encuesta_insert` (INSERT OR UPDATE) → `trigger_recalcular()` → `recalcular_puntajes(uuid)`:
+  recomputa los agregados de `municipios` que colorean el mapa (`puntaje_global`, por categoría,
+  `total_votos`, `meses_promedio`). Desde 0010 usa **pesos v8** + **agregación en 2 niveles**
+  (promedio por desarrollador, luego entre desarrolladores; legacy NULL = un desarrollador c/u).
+  UPSERT-safe (recomputa desde cero).
+- `trigger_recalcular_puntaje` (solo INSERT) → `recalcular_puntaje_municipio()`: mantiene las
+  columnas **vestigiales** `puntaje_promedio`/`total_evaluaciones` (promedio plano /6). El
+  frontend NO las usa; se dejaron intactas (no refactor de lo no relacionado).
 
 **Columnas v8 en `encuestas` (tras 0008):** `tipo_obra` (slug, NULL=legacy),
 `velocidad_percibida` (1-5), `tasas_porcentaje` (numeric), `presion_pagos_informales`
