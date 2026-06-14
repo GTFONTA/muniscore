@@ -76,7 +76,7 @@ NUNCA una vista que cruce empresa con el contenido/dirección del voto.
 |---|---|---|
 | 0 | Diagnóstico (tabla, trigger, form, afirmaciones inexistentes hoy) | ✅ |
 | 1 | DB: columnas `tipo_obra`/`velocidad_percibida`/`tasas_porcentaje`/`presion_pagos_informales`/`respuestas` + índice único 3-cols (0008) | ✅ (corrida en Supabase) |
-| 2 | Catálogo central v8 (pesos, fórmulas, afirmaciones textuales) en módulo único | ⬜ |
+| 2 | Catálogo central v8 (`src/lib/puntajeV8.js`: pesos, fórmulas, afirmaciones textuales) | ✅ |
 | 3 | Formulario (tipo_obra 1er paso, afirmaciones desde config, crítica, velocidad percibida+cuadro, tasas) + swap del índice/RPC `votar` | ⬜ |
 | 4 | Recálculo v8 por reseña + trigger agregación 2 niveles + filtro de mapa por tipo (UMBRAL_MIN_RESEÑAS=3, vía RPC/vista SECURITY DEFINER) | ⬜ |
 
