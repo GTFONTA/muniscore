@@ -8,7 +8,7 @@
 //  Para cambiar pesos de encuesta → editá PREGUNTAS más abajo
 // ============================================================
 import ModalCalificar from './components/ModalCalificar';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import {
   getMunicipios,
   getDocumentos,
@@ -21,7 +21,6 @@ import {
   yaVoto,
   enviarContacto,
   getMesesPromedio,
-  getPuntajesPorTipo,
 } from './lib/supabase';
 import MapaPoligonos from './components/MapaPoligonos';
 import NoticiasCarrusel from './components/NoticiasCarrusel';
@@ -37,7 +36,6 @@ import {
   PREGUNTA_TASAS,
   NOTA_TASAS,
   puntajeReseña,
-  UMBRAL_MIN_RESENAS,
 } from './lib/puntajeV8';
 
 // ─────────────────────────────────────────────
@@ -822,13 +820,26 @@ const PanelMunicipio = ({ mun, usuario, onClose, onVotado }) => {
 // ─────────────────────────────────────────────
 const MOSTRAR_NOTICIAS = false;
 
+// Filtro del mapa por categoría de calificación. El valor por defecto es el
+// Índice Municipal (puntaje_global). Cada subcategoría usa su columna ya
+// agregada en `municipios` (la mantiene el trigger recalcular_puntajes), por
+// eso el mapa se repinta sin pedir nada a la base.
+const CATEGORIAS_MAPA = [
+  { campo: "puntaje_global",         label: "Índice Municipal" },
+  { campo: "puntaje_transparencia",  label: "Transparencia e integridad" },
+  { campo: "puntaje_velocidad",      label: "Velocidad de aprobación" },
+  { campo: "puntaje_normativa",      label: "Claridad y accesibilidad de la normativa" },
+  { campo: "puntaje_previsibilidad", label: "Previsibilidad y consistencia" },
+  { campo: "puntaje_atencion",       label: "Atención al público" },
+  { campo: "puntaje_impuestos",      label: "Razonabilidad de las tasas" },
+];
+
 export default function App() {
   const [municipios, setMunicipios] = useState([]);
   const [activo, setActivo]         = useState(null);
   const [vista, setVista]           = useState("mapa");
   const [filtro, setFiltro]         = useState("Todos");
-  const [tipoObraFiltro, setTipoObraFiltro] = useState("");   // "" = Todas
-  const [puntajesTipo, setPuntajesTipo]     = useState(null); // { municipio_id: row } | null
+  const [categoriaMapa, setCategoriaMapa]   = useState("puntaje_global"); // categoría que colorea el mapa
   const [usuario, setUsuario]       = useState(null);
   const [articulos, setArticulos]   = useState([]);
   const [cargando, setCargando]     = useState(true);
@@ -930,41 +941,13 @@ export default function App() {
     document.head.appendChild(s);
   }, []);
 
-  // Filtro del mapa por tipo de obra: trae los puntajes por tipo (RPC)
-  // solo cuando hay un tipo seleccionado. "" = Todas → índice general.
-  useEffect(() => {
-    if (!tipoObraFiltro) { setPuntajesTipo(null); return; }
-    let cancelado = false;
-    (async () => {
-      const { data } = await getPuntajesPorTipo(tipoObraFiltro, UMBRAL_MIN_RESENAS);
-      if (cancelado) return;
-      const map = {};
-      (data || []).forEach(r => { map[r.municipio_id] = r; });
-      setPuntajesTipo(map);
-    })();
-    return () => { cancelado = true; };
-  }, [tipoObraFiltro]);
-
-  // Municipios que se pasan al mapa: con "Todas" es el índice general;
-  // con un tipo, se reemplaza el puntaje por el de ese tipo y los que no
-  // llegan al umbral quedan en estado neutro ("sin datos suficientes").
-  const municipiosMapa = !tipoObraFiltro
+  // Municipios que se pasan al mapa. El mapa colorea siempre por
+  // `puntaje_global`; con el Índice Municipal se usa tal cual, y con una
+  // subcategoría se reemplaza `puntaje_global` por la columna elegida (que ya
+  // viene agregada en `municipios`) para repintar el mapa sin tocar la base.
+  const municipiosMapa = categoriaMapa === "puntaje_global"
     ? municipios
-    : municipios.map(m => {
-        const r = puntajesTipo && puntajesTipo[m.id];
-        if (!r) return { ...m, puntaje_global: 0, total_votos: 0 };
-        return {
-          ...m,
-          puntaje_global:         Number(r.puntaje_global),
-          total_votos:            r.total_votos,
-          puntaje_transparencia:  Number(r.puntaje_transparencia),
-          puntaje_velocidad:      Number(r.puntaje_velocidad),
-          puntaje_normativa:      Number(r.puntaje_normativa),
-          puntaje_previsibilidad: Number(r.puntaje_previsibilidad),
-          puntaje_atencion:       Number(r.puntaje_atencion),
-          puntaje_impuestos:      Number(r.puntaje_impuestos),
-        };
-      });
+    : municipios.map(m => ({ ...m, puntaje_global: Number(m[categoriaMapa]) || 0 }));
 
   const regiones = ["Todos", "CABA", "GBA Norte", "GBA Oeste", "GBA Sur"];
   const filtrados = filtro === "Todos" ? municipios : municipios.filter(m => m.region === filtro);
@@ -1094,30 +1077,37 @@ export default function App() {
               👆 Hacé clic en tu municipio para ver su estadística y puntuarlo
             </div>
           </div>
-          {/* Filtro por tipo de obra */}
-          <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8, padding: "0 16px" }}>
-            {[{ slug: "", label: "Todas" }, ...TIPOS_OBRA].map(t => {
-              const sel = tipoObraFiltro === t.slug;
+          {/* Filtro por categoría de calificación. La pill principal
+              ("Índice Municipal") lleva acento permanente — estrella, texto
+              naranja en negrita y un separador que la distingue del grupo. */}
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexWrap: "wrap", gap: 8, padding: "0 16px" }}>
+            {CATEGORIAS_MAPA.map(c => {
+              const sel = categoriaMapa === c.campo;
+              const principal = c.campo === "puntaje_global";
               return (
-                <button key={t.slug || "todas"} onClick={() => setTipoObraFiltro(t.slug)} style={{
-                  padding: "0.45rem 0.95rem", borderRadius: 999, cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-                  border: `1px solid ${sel ? T.orange : T.border}`,
-                  background: sel ? T.orangeSoft : T.bg,
-                  color: sel ? T.orange : T.textMid,
-                  fontWeight: sel ? 700 : 500, transition: "all 0.12s",
-                }}>{t.label}</button>
+                <Fragment key={c.campo}>
+                  <button onClick={() => setCategoriaMapa(c.campo)} style={{
+                    padding: "0.45rem 0.95rem", borderRadius: 999, cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    border: `1px solid ${principal || sel ? T.orange : T.border}`,
+                    background: sel ? T.orangeSoft : T.bg,
+                    color: principal || sel ? T.orange : T.textMid,
+                    fontWeight: principal || sel ? 700 : 500, transition: "all 0.12s",
+                  }}>
+                    {principal && <span aria-hidden="true" style={{ fontSize: 12 }}>★</span>}
+                    {c.label}
+                  </button>
+                  {principal && (
+                    <span aria-hidden="true" style={{ flexShrink: 0, width: 1, height: 22, background: T.borderMid, margin: "0 2px" }} />
+                  )}
+                </Fragment>
               );
             })}
           </div>
-          {tipoObraFiltro && (
-            <p style={{ textAlign: "center", fontSize: 12, color: T.textLight, margin: "8px 16px 0" }}>
-              Mostrando solo municipios con al menos {UMBRAL_MIN_RESENAS} reseñas de este tipo. El resto aparece sin color (datos insuficientes).
-            </p>
-          )}
           <div style={{ width: '100%', position: 'relative' }}>
             <MapaPoligonos
               municipios={municipiosMapa}
-              onSeleccionar={(mun) => setActivo(mun)}
+              onSeleccionar={(mun) => setActivo(municipios.find(m => m.id === mun?.id) || mun)}
             />
             {activo && (
               <div style={{ position: 'absolute', inset: 0, zIndex: 1000 }}>

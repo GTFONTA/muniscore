@@ -78,7 +78,7 @@ NUNCA una vista que cruce empresa con el contenido/dirección del voto.
 | 1 | DB: columnas `tipo_obra`/`velocidad_percibida`/`tasas_porcentaje`/`presion_pagos_informales`/`respuestas` + índice único 3-cols (0008) | ✅ (corrida en Supabase) |
 | 2 | Catálogo central v8 (`src/lib/puntajeV8.js`: pesos, fórmulas, afirmaciones textuales) | ✅ |
 | 3 | Formulario (tipo_obra 1er paso, afirmaciones desde config, crítica, velocidad percibida+cuadro, tasas) + swap del índice/RPC `votar` (0009) | ✅ |
-| 4 | Recálculo v8 por reseña + trigger agregación 2 niveles + filtro de mapa por tipo (UMBRAL_MIN_RESEÑAS=3, vía RPC/vista SECURITY DEFINER) | ✅ |
+| 4 | Recálculo v8 por reseña + trigger agregación 2 niveles + filtro de mapa por tipo (UMBRAL_MIN_RESEÑAS=3, vía RPC/vista SECURITY DEFINER) — *el filtro por tipo fue luego reemplazado por el filtro por categoría (ver §5, frontend)* | ✅ |
 
 **Pesos v8:** Transparencia 25%, Velocidad 25%, Normativa 10%, Previsibilidad 15%,
 Atención 10%, Tasas 15%. (Velocidad y Tasas: 60% cuantitativo + 40% cuestionario.)
@@ -98,8 +98,10 @@ Atención 10%, Tasas 15%. (Velocidad y Tasas: 60% cuantitativo + 40% cuestionari
   - `guardarVotoEmpresa(payload)` (interno) — llama RPC `votar` con la firma v8 (tipo_obra
     + puntajes numeric + meses/velocidad_percibida/tasas/presion/respuestas). `enviarVoto` y
     `actualizarVoto` delegan ambos acá (votoId se ignora; la identidad es la empresa).
-  - `getPuntajesPorTipo(tipoObra, umbral=3)` — llama RPC `puntajes_por_tipo` para el filtro
-    de mapa por tipo de obra (solo agregados por municipio; nunca contenido por reseña).
+  - `getPuntajesPorTipo(tipoObra, umbral=3)` — llama RPC `puntajes_por_tipo` (solo agregados
+    por municipio; nunca contenido por reseña). **Ya NO se usa desde el mapa** (el filtro
+    pasó a ser por categoría, que lee columnas ya agregadas en `municipios`); la función y el
+    RPC quedan en el código por si se reusan, pero el front no las invoca hoy.
 - `src/lib/puntajeV8.js` — **fuente única** del v8: `TIPOS_OBRA`, `CATEGORIAS`, `PESOS`,
   `AFIRMACIONES` (texto exacto), `AFIRMACION_CRITICA`, cuadros de velocidad, textos
   obligatorios y fórmulas puras (`puntajeReseña`, etc.). El form lee de acá; NO duplicar.
@@ -109,10 +111,15 @@ Atención 10%, Tasas 15%. (Velocidad y Tasas: 60% cuantitativo + 40% cuestionari
   velocidad_percibida 1-5 + cuadro orientativo) y de Tasas (% sobre costo directo). El cliente
   calcula los puntajes por categoría con `puntajeReseña` y guarda también los insumos crudos.
   Obligatorios para enviar: tipo_obra + velocidad_percibida + % de tasas. En la vista mapa hay
-  un **filtro por tipo de obra** (pills "Todas" + 6 tipos): al elegir un tipo llama a
-  `getPuntajesPorTipo` y recolorea con `municipiosMapa` (los que no llegan al umbral quedan
-  neutros). `PREGUNTAS` (pesos del panel detalle/CatBar) y el texto de Metodología ya usan los
-  pesos v8 (25/25/10/15/10/15) tras Fase 4.
+  un **filtro por categoría de calificación** (constante local `CATEGORIAS_MAPA`: pills
+  "Índice Municipal" [default] + las 6 categorías). El mapa colorea siempre por `puntaje_global`;
+  con "Índice Municipal" se pasan los `municipios` tal cual, y con una subcategoría
+  `municipiosMapa` reemplaza `puntaje_global` por la columna ya agregada en `municipios`
+  (`puntaje_transparencia`/`_velocidad`/`_normativa`/`_previsibilidad`/`_atencion`/`_impuestos`,
+  que mantiene el trigger `recalcular_puntajes`) y el mapa se repinta sin pedir nada a la base.
+  Al clickear un municipio el panel resuelve los datos completos desde `municipios` por `id`
+  (el filtro solo afecta el color, no el detalle). `PREGUNTAS` (pesos del panel detalle/CatBar)
+  y el texto de Metodología ya usan los pesos v8 (25/25/10/15/10/15) tras Fase 4.
 - `src/components/ModalCalificar.jsx` — usa el gate centralizado `loginConEmail`.
 
 **Migraciones SQL (correr en Supabase SQL Editor, en orden):**
@@ -156,8 +163,10 @@ Atención 10%, Tasas 15%. (Velocidad y Tasas: 60% cuantitativo + 40% cuestionari
   `encuestas` ni el 2º trigger (columnas vestigiales `puntaje_promedio`/`total_evaluaciones`).
   Al final hace un recálculo único de todos los municipios.
 - `supabase/migrations/0011_puntajes_por_tipo.sql` — **Fase 4 (parte 2)**. RPC
-  `puntajes_por_tipo(p_tipo_obra, p_umbral=3)` (SECURITY DEFINER) para el filtro de mapa:
-  devuelve por municipio el puntaje calculado SOLO con reseñas de ese tipo (promedio plano:
+  `puntajes_por_tipo(p_tipo_obra, p_umbral=3)` (SECURITY DEFINER). Se creó para el filtro de
+  mapa por tipo de obra (hoy reemplazado por el filtro por categoría); el RPC queda en la base
+  pero el front ya no lo invoca. Devuelve por municipio el puntaje calculado SOLO con reseñas
+  de ese tipo (promedio plano:
   para un tipo, cada empresa aporta ≤1 reseña por el índice único), y SOLO si llega al umbral.
   Devuelve solo agregados (promedios + conteo), nunca contenido por reseña. Grant a anon+auth.
 - `supabase/seed/empresas_cedu_ejemplo.sql` — ejemplo de carga masiva (on conflict do nothing).
@@ -188,8 +197,9 @@ la lee. Los votos legacy (empresa_id NULL) no matchean ninguna empresa real.
 **RPCs (todas SECURITY DEFINER):** `email_autorizado(text)`,
 `votar(uuid, text, numeric×6, int, int, numeric, boolean, jsonb)` (firma v8 tras 0009),
 `mi_voto(uuid, text)` (firma v8 tras 0009),
-`puntajes_por_tipo(text, int)` (tras 0011 — filtro de mapa por tipo, grant a anon+auth,
-devuelve solo agregados por municipio si llega al umbral; nunca contenido por reseña).
+`puntajes_por_tipo(text, int)` (tras 0011 — se creó para el filtro de mapa por tipo, hoy sin
+uso en el front [el mapa filtra por categoría], grant a anon+auth, devuelve solo agregados por
+municipio si llega al umbral; nunca contenido por reseña).
 - En `mi_voto` y `votar`, resolver la empresa con alias de tabla
   (`select ea.id ... from empresas_autorizadas ea`) para evitar `column "id" is ambiguous`.
 - `votar` (v8): `ON CONFLICT (empresa_id, municipio_id, tipo_obra)`; lanza `tipo_obra_requerido`
