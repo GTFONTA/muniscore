@@ -110,7 +110,10 @@ Atención 10%, Tasas 15%. (Velocidad y Tasas: 60% cuantitativo + 40% cuestionari
   crítica al final de Transparencia, bloque cuantitativo de Velocidad (meses estadístico +
   velocidad_percibida 1-5 + cuadro orientativo) y de Tasas (% sobre costo directo). El cliente
   calcula los puntajes por categoría con `puntajeReseña` y guarda también los insumos crudos.
-  Obligatorios para enviar: tipo_obra + velocidad_percibida + % de tasas. En la vista mapa hay
+  En desktop (>768px) `ModalEncuesta` se presenta como **panel lateral derecho** (~50vw, vía
+  `createPortal` a `document.body` para que su `position:fixed` se mida contra el viewport y no
+  quede confinado al `backdrop-filter` del panel); en mobile/tablet queda el modal centrado de
+  siempre. Obligatorios para enviar: tipo_obra + velocidad_percibida + % de tasas. En la vista mapa hay
   un **filtro por categoría de calificación** (constante local `CATEGORIAS_MAPA`: pills
   "Índice Municipal" [default] + las 6 categorías). El mapa colorea siempre por `puntaje_global`;
   con "Índice Municipal" se pasan los `municipios` tal cual, y con una subcategoría
@@ -121,6 +124,19 @@ Atención 10%, Tasas 15%. (Velocidad y Tasas: 60% cuantitativo + 40% cuestionari
   (el filtro solo afecta el color, no el detalle). `PREGUNTAS` (pesos del panel detalle/CatBar)
   y el texto de Metodología ya usan los pesos v8 (25/25/10/15/10/15) tras Fase 4.
 - `src/components/ModalCalificar.jsx` — usa el gate centralizado `loginConEmail`.
+
+**Panel de administración de la whitelist (página aparte, `/admin.html`):**
+- `admin.html` — entrada HTML separada del sitio público (`noindex,nofollow`); monta
+  `src/admin/main.jsx`. Se construye como bundle aparte (ver `vite.config.js` multi-página).
+- `src/admin/main.jsx` + `src/admin/AdminApp.jsx` — la SPA del panel: login (email+password),
+  listado y alta/edición/baja **lógica** (`activo=false`, nunca DELETE) de `empresas_autorizadas`.
+- `src/lib/admin.js` — capa de datos del admin. Usa un **cliente Supabase propio** con
+  `storageKey: 'munilupa-admin'` para NO mezclar la sesión del admin con la del votante en el
+  mismo navegador. `loginAdmin` hace `signInWithPassword` y luego verifica `es_admin()` (si no
+  es admin, `signOut` + `no_admin`). El permiso NO se decide en el front: toda la autorización
+  vive en RLS (migración 0012) — un no-admin recibe filas vacías/errores de la base.
+- `vite.config.js` — build **multi-página**: entradas `main` (`index.html`) y `admin`
+  (`admin.html`). Cada una genera su bundle.
 
 **Migraciones SQL (correr en Supabase SQL Editor, en orden):**
 - `supabase/migrations/0001_empresas_autorizadas.sql` — tabla whitelist + trigger de
@@ -169,6 +185,15 @@ Atención 10%, Tasas 15%. (Velocidad y Tasas: 60% cuantitativo + 40% cuestionari
   de ese tipo (promedio plano:
   para un tipo, cada empresa aporta ≤1 reseña por el índice único), y SOLO si llega al umbral.
   Devuelve solo agregados (promedios + conteo), nunca contenido por reseña. Grant a anon+auth.
+- `supabase/migrations/0012_admin_whitelist.sql` — **Panel de admin**. (1) tabla `admins`
+  (`user_id` → `auth.users`, RLS activada SIN policies: no sale por REST); (2) RPC `es_admin()`
+  (SECURITY DEFINER, devuelve si `auth.uid()` está en `admins`; anon→false); (3) policies de
+  `empresas_autorizadas`: SELECT/INSERT/UPDATE solo si `es_admin()`, **sin DELETE** (baja lógica
+  para no romper el vínculo con votos ya emitidos) + grant select/insert/update a authenticated
+  (la policy los acota a admins). NO toca filas existentes, ni `encuestas`, ni el contenido de
+  los votos. ✅ Corrida en Supabase. Alta de admin (1 vez por persona): Authentication → Users →
+  Add user (email+clave, "Auto Confirm"), luego el `insert into public.admins …` que documenta
+  la propia migración al final.
 - `supabase/seed/empresas_cedu_ejemplo.sql` — ejemplo de carga masiva (on conflict do nothing).
 
 ---
@@ -177,7 +202,14 @@ Atención 10%, Tasas 15%. (Velocidad y Tasas: 60% cuantitativo + 40% cuestionari
 
 **Tablas:** `municipios` (con columnas agregadas `total_votos`, `puntaje_global`
 mantenidas por triggers), `encuestas` (votos), `empresas_autorizadas` (whitelist),
-`articulos`, `contactos`, `documentos`.
+`admins` (usuarios con permiso de administración, tras 0012), `articulos`, `contactos`,
+`documentos`.
+
+**RLS en `empresas_autorizadas` (tras 0012):** RLS activada desde 0001 (tabla bloqueada).
+0012 agrega policies de SELECT/INSERT/UPDATE **solo si `es_admin()`** (a `authenticated`);
+**sin DELETE** (las bajas son lógicas: `activo=false`). anon nunca pasa (`auth.uid()` NULL →
+`es_admin()` false). El admin solo toca esta tabla: no llega a `encuestas` ni al contenido de
+los votos (se mantiene el principio de privacidad).
 
 **RLS en `encuestas` (tras Fase 5):**
 - Policies de escritura (INSERT/UPDATE): **eliminadas**. Todo write pasa SOLO por el
@@ -199,7 +231,9 @@ la lee. Los votos legacy (empresa_id NULL) no matchean ninguna empresa real.
 `mi_voto(uuid, text)` (firma v8 tras 0009),
 `puntajes_por_tipo(text, int)` (tras 0011 — se creó para el filtro de mapa por tipo, hoy sin
 uso en el front [el mapa filtra por categoría], grant a anon+auth, devuelve solo agregados por
-municipio si llega al umbral; nunca contenido por reseña).
+municipio si llega al umbral; nunca contenido por reseña),
+`es_admin()` (tras 0012 — booleano; true si `auth.uid()` está en `admins`; bypassa la RLS de
+`admins` para poder leerla; grant a anon+authenticated; es la barrera del panel de admin).
 - En `mi_voto` y `votar`, resolver la empresa con alias de tabla
   (`select ea.id ... from empresas_autorizadas ea`) para evitar `column "id" is ambiguous`.
 - `votar` (v8): `ON CONFLICT (empresa_id, municipio_id, tipo_obra)`; lanza `tipo_obra_requerido`
@@ -275,13 +309,18 @@ municipio si llega al umbral; nunca contenido por reseña).
 
 ## 9. Pendientes
 
-- (Fase 6 futura, cuando se defina "admin/CEDU") Implementar RPC SECURITY DEFINER
-  `seguimiento()` con chequeo de rol admin adentro, para ver el seguimiento desde la app
-  sin dar SELECT directo de la vista a authenticated. Queda propuesto en 0005.
+- (Fase 6 futura) Implementar RPC SECURITY DEFINER `seguimiento()` con chequeo de rol admin
+  adentro, para ver el seguimiento desde la app sin dar SELECT directo de la vista a
+  authenticated. Queda propuesto en 0005; el rol admin ya existe (`es_admin()` de 0012, reusable).
 - Tras borrar votos de prueba: `alter table encuestas validate constraint encuestas_tipo_proyecto_check;`
   (sella el CHECK nuevo de tipos para datos históricos; ver 0006).
-- Deploy a Vercel (al final): env vars `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`,
-  redirect URLs en Supabase, SMTP.
+- Deploy a Vercel (EN CURSO): repo `GTFONTA/muniscore` (GitHub) conectado por integración →
+  cada push a `main` redeploya. Pendiente del lado del usuario: importar el repo en Vercel,
+  cargar env vars `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`, y agregar la URL de Vercel en
+  Supabase → Auth → URL Configuration (Site URL + Redirect URLs `https://<sitio>/**`) para que
+  vuelva el magic link. El build es multi-página: publica el sitio público (`/`) y el panel de
+  admin (`/admin.html`). Nota: `.env` está trackeado en git (la anon key es pública por diseño;
+  opcional sacarlo del control de versiones más adelante).
 - (Opcional) Proponer tabla `historial_mails` para auditar cambios de email.
 - (Observación, fuera de scope) Con un solo client, tras login las lecturas públicas
   corren como `authenticated` → el feed público muestra solo filas propias. Limitación
