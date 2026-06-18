@@ -9,6 +9,7 @@
 // ============================================================
 import ModalCalificar from './components/ModalCalificar';
 import { useState, useEffect, useCallback, Fragment } from 'react';
+import { createPortal } from 'react-dom';
 import {
   getMunicipios,
   getDocumentos,
@@ -501,9 +502,19 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
     </div>
   );
 
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(26,26,26,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300, backdropFilter: "blur(6px)" }}>
-      <div style={{ background: T.bg, borderRadius: T.radiusXl, width: 500, maxWidth: "92vw", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 80px rgba(0,0,0,0.18)", animation: "fadeUp 0.22s ease" }}>
+  // En escritorio (>768px) el formulario se muestra como panel lateral derecho
+  // (~50vw) sin tapar el mapa. En mobile/tablet se mantiene el modal centrado
+  // actual. Se monta vía portal en document.body para que su position:fixed se
+  // mida contra el viewport y no quede confinado al backdrop-filter del panel.
+  const esDesktop = typeof window !== "undefined" && window.matchMedia("(min-width: 769px)").matches;
+
+  return createPortal(
+    <div style={esDesktop
+      ? { position: "fixed", top: 0, right: 0, height: "100vh", zIndex: 2000 }
+      : { position: "fixed", inset: 0, background: "rgba(26,26,26,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300, backdropFilter: "blur(6px)" }}>
+      <div style={esDesktop
+        ? { background: T.bg, height: "100vh", width: "max(50vw, 500px)", maxWidth: "92vw", overflowY: "auto", boxShadow: "-12px 0 48px rgba(0,0,0,0.18)", animation: "fadeUp 0.22s ease" }
+        : { background: T.bg, borderRadius: T.radiusXl, width: 500, maxWidth: "92vw", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 80px rgba(0,0,0,0.18)", animation: "fadeUp 0.22s ease" }}>
 
         {/* Header */}
         <div style={{ padding: "28px 30px 22px", borderBottom: `1px solid ${T.border}` }}>
@@ -675,7 +686,8 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
