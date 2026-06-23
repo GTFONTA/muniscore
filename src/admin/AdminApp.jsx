@@ -15,6 +15,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   loginAdmin, sesionAdminActiva, cerrarSesionAdmin,
   listarEmpresas, crearEmpresa, editarEmpresa, setActivo,
+  getParticipacion, cambiarPassword,
 } from '../lib/admin.js';
 
 // Paleta consistente con el sitio (sin importar nada del sitio público).
@@ -117,6 +118,13 @@ function Panel({ adminEmail, onSalir }) {
   const [editVals, setEditVals] = useState({ empresa: '', email: '', camara: '' });
   const [guardandoEdit, setGuardandoEdit] = useState(false);
 
+  // Vista activa + cambio de contraseña
+  const [vista, setVista] = useState('empresas');   // 'empresas' | 'participacion'
+  const [cambiandoPass, setCambiandoPass] = useState(false);
+  const [pass1, setPass1] = useState('');
+  const [pass2, setPass2] = useState('');
+  const [guardandoPass, setGuardandoPass] = useState(false);
+
   const cargar = async () => {
     setCargando(true);
     const { data } = await listarEmpresas();
@@ -192,8 +200,23 @@ function Panel({ adminEmail, onSalir }) {
     setEmpresas(prev => prev.map(x => x.id === e.id ? { ...x, activo: !e.activo } : x));
   };
 
+  const guardarPass = async () => {
+    if (pass1.length < 8)   { flash('error', 'La contraseña debe tener al menos 8 caracteres.'); return; }
+    if (pass1 !== pass2)    { flash('error', 'Las contraseñas no coinciden.'); return; }
+    setGuardandoPass(true);
+    const { error } = await cambiarPassword(pass1);
+    setGuardandoPass(false);
+    if (error) { flash('error', 'No se pudo cambiar la contraseña.'); return; }
+    setCambiandoPass(false); setPass1(''); setPass2('');
+    flash('ok', 'Contraseña actualizada.');
+  };
+
   const th = { textAlign: 'left', padding: '10px 12px', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, color: T.textLight, fontWeight: 700, borderBottom: `1px solid ${T.border}` };
   const td = { padding: '10px 12px', fontSize: 14, color: T.text, borderBottom: `1px solid ${T.border}`, verticalAlign: 'middle' };
+
+  const tabBase = { padding: '8px 16px', borderRadius: T.radiusSm, fontSize: 14, fontWeight: 700, fontFamily: FONT, cursor: 'pointer', border: `1.5px solid ${T.border}` };
+  const tabActiva   = { ...tabBase, background: T.orange, color: '#fff', borderColor: T.orange };
+  const tabInactiva = { ...tabBase, background: 'transparent', color: T.textMid };
 
   return (
     <div style={{ minHeight: '100vh', background: T.bgWarm, fontFamily: FONT }}>
@@ -205,6 +228,7 @@ function Panel({ adminEmail, onSalir }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ fontSize: 13, color: T.textMid }}>{adminEmail}</span>
+          <button onClick={() => setCambiandoPass(v => !v)} style={btnGhost}>Cambiar contraseña</button>
           <button onClick={onSalir} style={btnGhost}>Salir</button>
         </div>
       </header>
@@ -219,6 +243,26 @@ function Panel({ adminEmail, onSalir }) {
           </div>
         )}
 
+        {/* Cambiar contraseña (sesión activa) */}
+        {cambiandoPass && (
+          <section style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: 20, marginBottom: 24 }}>
+            <h2 style={{ margin: '0 0 14px', fontSize: 15, color: T.text }}>Cambiar contraseña</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto auto', gap: 10, alignItems: 'center' }}>
+              <input type="password" placeholder="Nueva contraseña" value={pass1} onChange={e => setPass1(e.target.value)} style={inputStyle(pass1.length >= 8)} autoComplete="new-password" />
+              <input type="password" placeholder="Repetir contraseña" value={pass2} onChange={e => setPass2(e.target.value)} style={inputStyle(!!pass2 && pass1 === pass2)} autoComplete="new-password" />
+              <button onClick={guardarPass} disabled={guardandoPass} style={btnPrimary(guardandoPass)}>{guardandoPass ? 'Guardando…' : 'Guardar'}</button>
+              <button onClick={() => { setCambiandoPass(false); setPass1(''); setPass2(''); }} style={btnGhost}>Cancelar</button>
+            </div>
+          </section>
+        )}
+
+        {/* Pestañas */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+          <button onClick={() => setVista('empresas')} style={vista === 'empresas' ? tabActiva : tabInactiva}>Empresas</button>
+          <button onClick={() => setVista('participacion')} style={vista === 'participacion' ? tabActiva : tabInactiva}>Participación</button>
+        </div>
+
+        {vista === 'empresas' && (<>
         {/* Alta */}
         <section style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: 20, marginBottom: 24 }}>
           <h2 style={{ margin: '0 0 14px', fontSize: 15, color: T.text }}>Agregar empresa</h2>
@@ -316,8 +360,89 @@ function Panel({ adminEmail, onSalir }) {
           Las bajas no borran la empresa: la pasan a <strong>inactiva</strong> (deja de poder votar, pero se conserva su historial).
           Para cargas grandes de empresas nuevas, pedile el bloque al equipo de Munilupa.
         </p>
+        </>)}
+
+        {vista === 'participacion' && <Participacion />}
       </main>
     </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────
+//  Solapa Participación — votó / no votó (SIN contenido del voto)
+// ──────────────────────────────────────────────────────────────
+function Participacion() {
+  const [filas, setFilas] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [busqueda, setBusqueda] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      setCargando(true);
+      const { data } = await getParticipacion();
+      setFilas(data);
+      setCargando(false);
+    })();
+  }, []);
+
+  const th = { textAlign: 'left', padding: '10px 12px', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, color: T.textLight, fontWeight: 700, borderBottom: `1px solid ${T.border}` };
+  const td = { padding: '10px 12px', fontSize: 14, color: T.text, borderBottom: `1px solid ${T.border}`, verticalAlign: 'middle' };
+
+  const filtradas = useMemo(() => {
+    const q = busqueda.toLowerCase().trim();
+    if (!q) return filas;
+    return filas.filter(e =>
+      (e.empresa || '').toLowerCase().includes(q) ||
+      (e.email || '').toLowerCase().includes(q) ||
+      (e.camara || '').toLowerCase().includes(q));
+  }, [filas, busqueda]);
+
+  const votaron = filas.filter(f => f.voto).length;
+
+  return (
+    <>
+      <div style={{ padding: '12px 14px', borderRadius: T.radiusSm, marginBottom: 18, fontSize: 13, background: T.blueSoft, color: T.blue, border: `1px solid ${T.blue}33` }}>
+        Ves solo <strong>si</strong> cada empresa votó — nunca <strong>qué</strong> votó. El contenido del voto es secreto por diseño.
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+        <input placeholder="🔍 Buscar por nombre, email o cámara…" value={busqueda} onChange={e => setBusqueda(e.target.value)} style={{ ...inputStyle(), maxWidth: 360 }} />
+        <span style={{ fontSize: 13, color: T.textLight }}>{votaron} votaron · {filas.length} en total</span>
+      </div>
+
+      <div style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, overflow: 'hidden' }}>
+        {cargando ? (
+          <div style={{ padding: 40, textAlign: 'center', color: T.textLight, fontSize: 14 }}>Cargando…</div>
+        ) : filtradas.length === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', color: T.textLight, fontSize: 14 }}>Sin datos.</div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={th}>Empresa</th>
+                <th style={th}>Email</th>
+                <th style={th}>Cámara</th>
+                <th style={{ ...th, textAlign: 'right' }}>¿Votó?</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtradas.map(e => (
+                <tr key={e.id} style={{ background: e.activo ? T.bg : T.bgMuted }}>
+                  <td style={td}><span style={{ fontWeight: 600 }}>{e.empresa}</span></td>
+                  <td style={td}>{e.email}</td>
+                  <td style={td}>{e.camara || <span style={{ color: T.textLight }}>—</span>}</td>
+                  <td style={{ ...td, textAlign: 'right' }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: e.voto ? T.greenSoft : T.bgMuted, color: e.voto ? T.green : T.textLight }}>
+                      {e.voto ? 'Votó' : 'No votó'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </>
   );
 }
 

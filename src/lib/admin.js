@@ -15,12 +15,22 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// La whitelist, `es_admin()` y el Auth del admin viven en el DOMINIO A.
+const DOMINIO_A_URL = import.meta.env.VITE_DOMINIO_A_URL;
+const DOMINIO_A_KEY = import.meta.env.VITE_DOMINIO_A_KEY;
 
-// Cliente propio del panel (sesión separada del sitio público).
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_ANON, {
+// Cliente propio del panel (sesión separada del sitio y del votante).
+const supabaseAdmin = createClient(DOMINIO_A_URL, DOMINIO_A_KEY, {
   auth: { storageKey: 'munilupa-admin', persistSession: true, autoRefreshToken: true },
+});
+
+// Los VOTOS viven en el DOMINIO B. Para "quién votó" pedimos SOLO la lista
+// de tokens que votaron (sin contenido) y la cruzamos con el padrón de A.
+const DOMINIO_B_URL = import.meta.env.VITE_SUPABASE_URL;
+const DOMINIO_B_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabaseB = createClient(DOMINIO_B_URL, DOMINIO_B_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 });
 
 // ── ¿El usuario actual es admin? ─────────────────────────────
@@ -133,4 +143,48 @@ export async function editarEmpresa(id, { empresa, email, camara, activo }) {
 // ── Atajo: dar de baja / reactivar (baja lógica, nunca borra) ──
 export async function setActivo(id, activo) {
   return editarEmpresa(id, { activo });
+}
+
+// ── Participación: quién votó y quién no (SIN contenido del voto) ──
+// Cruza el padrón (Dominio A, con su token) contra la lista de tokens que
+// votaron (Dominio B). NUNCA trae qué votó cada empresa: solo un booleano.
+export async function getParticipacion() {
+  // 1) Padrón con su token (RLS de A solo deja a admins)
+  const { data: empresas, error } = await supabaseAdmin
+    .from('empresas_autorizadas')
+    .select('id, empresa, email, camara, activo, voter_token')
+    .order('empresa', { ascending: true });
+  if (error) {
+    console.error('Error al listar padrón:', error.message);
+    return { data: [], error };
+  }
+
+  // 2) Tokens que votaron (Dominio B; solo tokens, nada de contenido)
+  const { data: tokens, error: errB } = await supabaseB.rpc('tokens_que_votaron');
+  if (errB) {
+    console.error('Error al leer participación:', errB.message);
+    return { data: [], error: errB };
+  }
+  const votaron = new Set((tokens || []).map(t => t.voter_token));
+
+  // 3) Cruce local → un booleano por empresa
+  const data = empresas.map(e => ({
+    id: e.id,
+    empresa: e.empresa,
+    email: e.email,
+    camara: e.camara,
+    activo: e.activo,
+    voto: !!e.voter_token && votaron.has(e.voter_token),
+  }));
+  return { data, error: null };
+}
+
+// ── Cambiar la propia contraseña del admin (sesión activa) ──
+export async function cambiarPassword(nueva) {
+  const { error } = await supabaseAdmin.auth.updateUser({ password: nueva });
+  if (error) {
+    console.error('Error al cambiar contraseña:', error.message);
+    return { error: error.message };
+  }
+  return { error: null };
 }

@@ -11,12 +11,31 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// ⚠️ IMPORTANTE: reemplazá estos valores con los de tu proyecto Supabase
-// Los encontrás en: supabase.com → Tu Proyecto → Settings → API
+// ── Dominio B (este proyecto): VOTOS + datos públicos (lecturas) ──
+// Settings → API. El cliente B solo hace lecturas anónimas (mapa,
+// artículos, comentarios…). NO maneja sesión: la identidad vive en A.
 const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+});
+
+// ── Dominio A (proyecto de identidad, CEDU): LOGIN + VOTO ──────────
+// Auth (magic link), compuerta de whitelist (`email_autorizado`) y envío
+// del voto vía la Edge Function `votar-anonimo` (pasamanos ciego). Sesión
+// con storageKey propio para no chocar con el cliente B ni con el admin.
+const DOMINIO_A_URL = import.meta.env.VITE_DOMINIO_A_URL;
+const DOMINIO_A_KEY = import.meta.env.VITE_DOMINIO_A_KEY;
+
+export const supabaseA = createClient(DOMINIO_A_URL, DOMINIO_A_KEY, {
+  auth: {
+    storageKey: 'munilupa-voto',
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
 
 
 // ============================================================
@@ -64,55 +83,24 @@ export async function getEncuestasMunicipio(municipioId) {
   return { data, error };
 }
 
-// ── Verifica si la EMPRESA ya votó este municipio PARA ESE TIPO ──
-// Resuelve el voto por empresa_id (vía RPC mi_voto), no por usuario_id,
-// así sigue precargando aunque el voto se haya emitido con un mail
-// anterior (herencia). El tipo de obra es parte de la identidad del
-// voto en v8: una reseña por (empresa, municipio, tipo_obra).
-export async function yaVoto(municipioId, tipoObra = null) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { existe: false, votoId: null, votoActual: null };
-
-  const { data, error } = await supabase.rpc('mi_voto', {
-    p_municipio_id: municipioId,
-    p_tipo_obra:    tipoObra,
-  });
-  if (error) {
-    console.error('Error al verificar voto:', error.message);
-    return { existe: false, votoId: null, votoActual: null };
-  }
-
-  // mi_voto devuelve un set (0 ó 1 fila)
-  const row = Array.isArray(data) ? data[0] : data;
-  if (!row) return { existe: false, votoId: null, votoActual: null };
-
-  return {
-    existe: true,
-    votoId: row.id,
-    votoActual: {
-      tipoObra:               row.tipo_obra ?? "",
-      transparencia:          row.puntaje_transparencia,
-      velocidad:              row.puntaje_velocidad,
-      normativa:              row.puntaje_normativa,
-      impuestos:              row.puntaje_impuestos,
-      atencion:               row.puntaje_atencion,
-      previsibilidad:         row.puntaje_previsibilidad,
-      meses:                  row.meses_aprobacion ?? "",
-      velocidadPercibida:     row.velocidad_percibida ?? "",
-      tasasPorcentaje:        row.tasas_porcentaje ?? "",
-      presionPagosInformales: row.presion_pagos_informales ?? false,
-      respuestas:             row.respuestas ?? null,
-    }
-  };
+// ── (D-estricta) Precarga del voto: deshabilitada a propósito ──
+// En el modelo de dos dominios, el Dominio B NO expone la LECTURA de un
+// voto por token: nadie puede leer "qué votó tal token" (privacidad).
+// Por eso el formulario ya no precarga el voto anterior. Si la empresa
+// vuelve a votar, el envío SOBREESCRIBE (UPSERT por empresa+municipio+
+// tipo, resuelto en B). Se mantiene la firma para no tocar a quien la
+// llama; siempre responde "sin voto previo".
+export async function yaVoto(_municipioId, _tipoObra = null) {
+  return { existe: false, votoId: null, votoActual: null };
 }
 
-// ── Guardado del voto anclado a la EMPRESA (UPSERT vía RPC) ──
-// Toda la resolución mail→empresa_id y la clave única
-// (empresa_id, municipio_id) viven en el RPC `votar` (SECURITY
-// DEFINER). El cliente no decide insert vs update: el UPSERT lo
-// resuelve. Por eso enviarVoto y actualizarVoto delegan en la
-// MISMA función (sin duplicar lógica). `votoId` se ignora: la
-// identidad es la empresa, no la fila ni el auth user.
+// ── Guardado del voto vía la COMPUERTA del Dominio A ──────────
+// El cliente NO escribe en B directamente. Manda el voto a la Edge
+// Function `votar-anonimo` (Dominio A), que valida al votante, le pone
+// su token opaco y reenvía el voto a B (pasamanos ciego). Acá NO hay
+// nada de identidad: solo municipio + tipo + puntajes/insumos. El UPSERT
+// (una reseña por empresa+municipio+tipo) lo resuelve B. Por eso
+// enviarVoto y actualizarVoto delegan en esta misma función.
 async function guardarVotoEmpresa({
   municipioId,
   tipoObra,
@@ -128,29 +116,36 @@ async function guardarVotoEmpresa({
   presionPagosInformales,
   respuestas,
 }) {
-  const { data, error } = await supabase.rpc('votar', {
-    p_municipio_id:             municipioId,
-    p_tipo_obra:                tipoObra,
-    p_transparencia:            puntajeTransparencia,
-    p_velocidad:                puntajeVelocidad,
-    p_normativa:                puntajeNormativa,
-    p_impuestos:                puntajeImpuestos,
-    p_atencion:                 puntajeAtencion,
-    p_previsibilidad:           puntajePrevisibilidad,
-    p_meses:                    mesesAprobacion ?? null,
-    p_velocidad_percibida:      velocidadPercibida ?? null,
-    p_tasas_porcentaje:         tasasPorcentaje ?? null,
-    p_presion_pagos_informales: presionPagosInformales ?? null,
-    p_respuestas:               respuestas ?? null,
-  });
+  // Las claves van en snake_case: así las espera `votar_por_token` en B.
+  const body = {
+    municipio_id:             municipioId,
+    tipo_obra:                tipoObra,
+    transparencia:            puntajeTransparencia,
+    velocidad:                puntajeVelocidad,
+    normativa:                puntajeNormativa,
+    impuestos:                puntajeImpuestos,
+    atencion:                 puntajeAtencion,
+    previsibilidad:           puntajePrevisibilidad,
+    meses:                    mesesAprobacion ?? null,
+    velocidad_percibida:      velocidadPercibida ?? null,
+    tasas_porcentaje:         tasasPorcentaje ?? null,
+    presion_pagos_informales: presionPagosInformales ?? null,
+    respuestas:               respuestas ?? null,
+  };
+
+  const { data, error } = await supabaseA.functions.invoke('votar-anonimo', { body });
 
   if (error) {
-    console.error('Error al guardar voto:', error.message);
-    // El RPC lanza 'no_autorizado' / 'no_autenticado' / 'tipo_obra_requerido'
-    // como excepción.
-    if (error.message && error.message.includes('no_autorizado')) {
-      return { data: null, error: 'no_autorizado' };
+    // La compuerta responde {error, detalle} con status 4xx/5xx →
+    // supabase-js lo trae como FunctionsHttpError; el cuerpo está en
+    // error.context (un Response). Lo parseamos una sola vez.
+    let cuerpo = null;
+    try { cuerpo = await error.context?.json(); } catch { /* sin cuerpo legible */ }
+    const codigo = cuerpo?.error;
+    if (codigo === 'no_autorizado' || codigo === 'no_autenticado') {
+      return { data: null, error: codigo };
     }
+    console.error('Error al guardar voto:', error.message, cuerpo);
     return { data: null, error };
   }
   return { data, error: null };
@@ -181,8 +176,8 @@ export async function actualizarVoto(payload) {
 export async function loginConEmail(email) {
   const emailNorm = (email || '').trim().toLowerCase();
 
-  // 1) Compuerta: ¿está habilitado para votar?
-  const { data: autorizado, error: rpcError } = await supabase
+  // 1) Compuerta: ¿está habilitado para votar? (whitelist en Dominio A)
+  const { data: autorizado, error: rpcError } = await supabaseA
     .rpc('email_autorizado', { p_email: emailNorm });
 
   if (rpcError) {
@@ -193,8 +188,8 @@ export async function loginConEmail(email) {
     return { error: 'no_autorizado' };
   }
 
-  // 2) Autorizado → flujo de siempre (sin cambios)
-  const { error } = await supabase.auth.signInWithOtp({
+  // 2) Autorizado → magic link desde el Dominio A
+  const { error } = await supabaseA.auth.signInWithOtp({
     email: emailNorm,
     options: {
       emailRedirectTo: window.location.origin,  // Redirige de vuelta a la app
@@ -210,13 +205,13 @@ export async function loginConEmail(email) {
 
 // ── Obtener el usuario actual ────────────────────────────────
 export async function getUsuarioActual() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await supabaseA.auth.getUser();
   return user;
 }
 
 // ── Cerrar sesión ────────────────────────────────────────────
 export async function cerrarSesion() {
-  await supabase.auth.signOut();
+  await supabaseA.auth.signOut();
 }
 
 // ── Trae artículos publicados ─────────────────────────────────

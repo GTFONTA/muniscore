@@ -884,10 +884,10 @@ export default function App() {
     };
     cargarDatos();
 
-    // Escuchar cambios de sesión (cuando el usuario valida su email)
-    // Importar supabase directamente para el listener
-    import('./lib/supabase').then(({ supabase }) => {
-      const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Escuchar cambios de sesión (cuando el usuario valida su email).
+    // La sesión vive en el Dominio A (cliente supabaseA), no en B.
+    import('./lib/supabase').then(({ supabaseA }) => {
+      const { data: listener } = supabaseA.auth.onAuthStateChange((_event, session) => {
         setUsuario(session?.user || null);
       });
       return () => listener.subscription.unsubscribe();
