@@ -511,7 +511,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
   return createPortal(
     <div style={esDesktop
       ? { position: "fixed", top: 0, right: 0, height: "100vh", zIndex: 2000 }
-      : { position: "fixed", inset: 0, background: "rgba(26,26,26,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300, backdropFilter: "blur(6px)" }}>
+      : { position: "fixed", inset: 0, background: "rgba(26,26,26,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000, backdropFilter: "blur(6px)" }}>
       <div style={esDesktop
         ? { background: T.bg, height: "100vh", width: "max(50vw, 500px)", maxWidth: "92vw", overflowY: "auto", boxShadow: "-12px 0 48px rgba(0,0,0,0.18)", animation: "fadeUp 0.22s ease" }
         : { background: T.bg, borderRadius: T.radiusXl, width: 500, maxWidth: "92vw", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 80px rgba(0,0,0,0.18)", animation: "fadeUp 0.22s ease" }}>
