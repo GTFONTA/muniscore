@@ -88,6 +88,8 @@ export const AFIRMACIONES = {
     { id: "norm_3", texto: "Emite el certificado urbanístico o de zonificación en un plazo razonable y sin dificultades." },
     { id: "norm_4", texto: "La normativa está compilada en un texto único y ordenado, sin necesidad de cruzar múltiples ordenanzas sueltas." },
     { id: "norm_5", texto: "Ofrece guías, instructivos o glosarios que ayudan a interpretar la norma más allá del texto legal." },
+    { id: "norm_6", texto: "Mantiene coherencia entre las normas de obra, de habilitación y de subdivisión del suelo, sin exigencias contradictorias entre ellas." },
+    { id: "norm_7", texto: "Cuando modifica la normativa, establece reglas de transición claras que definen cómo continúan los trámites y proyectos ya iniciados." },
   ],
   previsibilidad: [
     { id: "prev_1", texto: "Aplica criterios consistentes con los de proyectos similares aprobados anteriormente en el mismo municipio." },
@@ -96,6 +98,8 @@ export const AFIRMACIONES = {
     { id: "prev_4", texto: "Respeta las prefactibilidades o aprobaciones previas emitidas, sin revertirlas a mitad del proceso." },
     { id: "prev_5", texto: "Mantiene el criterio técnico estable de principio a fin, sin pedir reformulaciones por cambio de interpretación." },
     { id: "prev_6", texto: "Consolida sus observaciones en una única acta: no introduce objeciones nuevas en revisiones posteriores, salvo las derivadas de los cambios que el propio proyectista incorporó para subsanar." },
+    { id: "prev_7", texto: "Mantiene estable en el tiempo la normativa urbanística aplicable (zonificación e indicadores), sin cambios frecuentes que alteren las reglas durante el desarrollo de un proyecto." },
+    { id: "prev_8", texto: "Otorga los permisos de obra con un plazo de vigencia suficiente para ejecutar el proyecto, sin obligar a renovarlos o re-tramitarlos por vencimiento." },
   ],
   atencion: [
     { id: "aten_1", texto: "Cuenta con sistema de turnos online o reserva anticipada que evita colas largas e impredecibles." },
