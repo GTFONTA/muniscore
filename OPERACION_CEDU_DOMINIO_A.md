@@ -112,6 +112,12 @@ Pasos:
 
 ## Parte 4 — Editar, dar de baja o reactivar una empresa
 
+> ⚠️ **REGLA CLAVE — Si una empresa cambia de mail, EDITALA. Nunca la cargues de
+> nuevo.** El historial de votos de cada empresa está atado a su **registro**, no
+> a su mail. Si das de alta una empresa nueva con el mail cambiado, **pierde todo
+> su historial** y queda figurando dos veces. Para cambiar un correo: usá siempre
+> **"Editar"** sobre la fila existente (ver más abajo).
+
 En la lista, cada empresa tiene a la derecha los botones de acción.
 
 **Editar** (corregir nombre, mail o cámara):
