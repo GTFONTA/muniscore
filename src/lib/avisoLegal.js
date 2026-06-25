@@ -32,7 +32,7 @@ export const AVISO_LEGAL_TEXTO = {
     {
       titulo: 'Objetivos del Responsable del Sitio Web',
       texto:
-        'Este sitio web (“el Sitio Web”) tiene por objeto la recopilación de puntajes y opiniones y la elaboración de índices y ponderaciones referidos a la gestión de los municipios de la República Argentina en relación con la facilidad o dificultad en el desarrollo de proyectos de construcción de inmuebles. Dichos índices y ponderaciones son construidos de manera privada y anónima. Toda la información se presenta de manera objetiva, veraz, precisa y clara.',
+        'Este sitio web (“Munilupa”) tiene por objeto la recopilación de puntajes y opiniones y la elaboración de índices y ponderaciones referidos a la gestión de los municipios de la República Argentina en relación con la facilidad o dificultad en el desarrollo de proyectos de construcción de inmuebles. Dichos índices y ponderaciones son construidos de manera privada y anónima. Toda la información se presenta de manera objetiva, veraz, precisa y clara.',
     },
     {
       texto:
