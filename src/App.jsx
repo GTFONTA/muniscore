@@ -38,6 +38,12 @@ import {
   NOTA_TASAS,
   puntajeReseña,
 } from './lib/puntajeV8';
+import {
+  AVISO_LEGAL_VISTA,
+  AVISO_LEGAL_VERSION,
+  AVISO_LEGAL_FECHA,
+  AVISO_LEGAL_TEXTO,
+} from './lib/avisoLegal';
 
 // ─────────────────────────────────────────────
 //  TOKENS DE DISEÑO — estilo Airbnb
@@ -343,6 +349,11 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
   const [linkEnviado, setLinkEnviado] = useState(false);
+  // Consentimiento obligatorio (barrera de UI: NO persiste nada, NO toca la
+  // RPC). `mostrarAviso` abre el aviso legal en un overlay no destructivo
+  // que no pierde el estado del voto en curso.
+  const [aceptaLegal, setAceptaLegal] = useState(false);
+  const [mostrarAviso, setMostrarAviso] = useState(false);
   const [votoExistenteInfo, setVotoExistenteInfo] = useState(null);
   const [cargandoVotoExistente, setCargandoVotoExistente] = useState(false);
 
@@ -509,6 +520,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
   const esDesktop = typeof window !== "undefined" && window.matchMedia("(min-width: 769px)").matches;
 
   return createPortal(
+    <>
     <div style={esDesktop
       ? { position: "fixed", top: 0, right: 0, height: "100vh", zIndex: 2000 }
       : { position: "fixed", inset: 0, background: "rgba(26,26,26,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000, backdropFilter: "blur(6px)" }}>
@@ -662,14 +674,34 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
                 </div>
               ))}
 
-              <BtnPrimary full onClick={handleEnviar} disabled={!listo || cargando}>
+              {/* Consentimiento obligatorio. El label "He leído y acepto el"
+                  tilda el checkbox; el link abre el aviso legal en un overlay
+                  no destructivo (no pierde el voto). Barrera de UI: nada se
+                  persiste ni se pasa a la RPC. */}
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 11, margin: "4px 0 18px" }}>
+                <input
+                  id="acepta-legal"
+                  type="checkbox"
+                  checked={aceptaLegal}
+                  onChange={e => setAceptaLegal(e.target.checked)}
+                  style={{ width: 18, height: 18, marginTop: 1, accentColor: T.orange, flexShrink: 0, cursor: "pointer" }}
+                />
+                <span style={{ fontSize: 13, lineHeight: 1.5, color: T.textMid }}>
+                  <label htmlFor="acepta-legal" style={{ cursor: "pointer" }}>He leído y acepto el </label>
+                  <span onClick={() => setMostrarAviso(true)} style={{ color: T.orange, fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}>aviso legal y descargo de responsabilidad</span>
+                </span>
+              </div>
+
+              <BtnPrimary full onClick={handleEnviar} disabled={!listo || !aceptaLegal || cargando}>
                 {cargando
                   ? "Enviando..."
                   : !listo
                     ? "Completá tipo de obra, velocidad y % de tasas"
-                    : votoExistenteInfo
-                      ? "Actualizar mi reseña →"
-                      : "Enviar mi reseña →"}
+                    : !aceptaLegal
+                      ? "Aceptá el aviso legal para continuar"
+                      : votoExistenteInfo
+                        ? "Actualizar mi reseña →"
+                        : "Enviar mi reseña →"}
               </BtnPrimary>
             </>}
           </>}
@@ -686,7 +718,37 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
           )}
         </div>
       </div>
-    </div>,
+    </div>
+
+    {/* Overlay del aviso legal — abre por encima del formulario sin perder
+        el voto en curso. Mismo texto que la vista (fuente única: avisoLegal.js). */}
+    {mostrarAviso && (
+      <div onClick={() => setMostrarAviso(false)} style={{ position: "fixed", inset: 0, background: "rgba(26,26,26,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2100, backdropFilter: "blur(6px)", padding: 16 }}>
+        <div onClick={e => e.stopPropagation()} style={{ background: T.bg, borderRadius: T.radiusXl, width: 640, maxWidth: "94vw", maxHeight: "88vh", overflowY: "auto", boxShadow: "0 24px 80px rgba(0,0,0,0.22)", animation: "fadeUp 0.2s ease" }}>
+          <div style={{ position: "sticky", top: 0, background: T.bg, padding: "22px 26px 16px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+            <div>
+              <h2 style={{ margin: "0 0 4px", fontSize: 19, fontWeight: 800, color: T.text }}>{AVISO_LEGAL_TEXTO.titulo}</h2>
+              <p style={{ margin: 0, fontSize: 12, color: T.textLight }}>Versión {AVISO_LEGAL_VERSION} · Última actualización: {AVISO_LEGAL_FECHA}</p>
+            </div>
+            <button onClick={() => setMostrarAviso(false)} style={{ width: 40, height: 40, borderRadius: "50%", border: `1.5px solid ${T.border}`, background: T.bg, cursor: "pointer", fontSize: 15, color: T.textLight, flexShrink: 0 }}>✕</button>
+          </div>
+          <div style={{ padding: "20px 26px 26px" }}>
+            <ol style={{ margin: 0, paddingLeft: 22, display: "flex", flexDirection: "column", gap: 15 }}>
+              {AVISO_LEGAL_TEXTO.puntos.map((p, i) => (
+                <li key={i} style={{ fontSize: 14, color: T.textMid, lineHeight: 1.65 }}>
+                  {p.titulo && <strong style={{ color: T.text }}>{p.titulo}: </strong>}
+                  {p.texto}
+                </li>
+              ))}
+            </ol>
+            <div style={{ marginTop: 22, textAlign: "right" }}>
+              <BtnGhost onClick={() => setMostrarAviso(false)}>Cerrar</BtnGhost>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>,
     document.body
   );
 };
@@ -1236,13 +1298,18 @@ export default function App() {
               { icon: "🙋", titulo: "¿Quién puede participar?", texto: "Munilupa es una herramienta cerrada: solo pueden votar las empresas previamente autorizadas que forman parte de la cámara CEDU+AEV, pero es escalable a otras cámaras y/o empresas invitadas. Antes de habilitar el voto, el sistema valida que la empresa esté autorizada. Solicitamos calificar únicamente los municipios donde la empresa efectivamente trabajó. Si tu empresa no forma parte de las cámaras y querés sumarte, escribinos." },
               { icon: "🏗️", titulo: "¿Por qué diferenciamos por tipo de obra?", texto: "No es lo mismo aprobar una vivienda unifamiliar que un desarrollo urbanístico o una nave industrial. Cada empresa califica según el tipo de obra que tramitó, para que las comparaciones sean entre casos parecidos." },
               { icon: "🛡️", titulo: "¿Cómo se evitan votos duplicados?", texto: "Quien vota es la empresa, no una persona ni un email en particular. Cada empresa registra un voto por municipio y por tipo de obra; si vuelve a calificar, se actualiza su reseña anterior en lugar de sumar una nueva. Si la empresa cambia su email de contacto, conserva su historial de votos. Así garantizamos: una empresa = un voto por municipio y tipo de obra." },
-              { icon: "🔒", titulo: "Privacidad de tus datos", texto: "Separamos por completo quién sos de lo que votás. La autorización (tu email y tu empresa) vive en un sistema administrado por la cámara; tu voto se guarda en un sistema distinto, asociado únicamente a un identificador opaco, sin tu email ni el nombre de tu empresa. Ninguna de las dos partes puede, por sí sola, vincular un voto con quién lo emitió. El voto es ANÓNIMO. A nivel de empresa solo puede verse si participó o no —nunca el contenido de su voto—. Cumplimos con la Ley 25.326 de Protección de Datos Personales de la República Argentina." },
+              { icon: "🔒", titulo: "Privacidad de tus datos", texto: "Separamos por completo quién sos de lo que votás. La autorización (tu email y tu empresa) vive en un sistema administrado por la cámara; tu voto se guarda en un sistema distinto, asociado únicamente a un identificador opaco, sin tu email ni el nombre de tu empresa. Ninguna de las dos partes puede, por sí sola, vincular un voto con quién lo emitió. El voto es ANÓNIMO. A nivel de empresa solo puede verse si participó o no —nunca el contenido de su voto—. Cumplimos con la Ley 25.326 de Protección de Datos Personales de la República Argentina.", enlaceAviso: true },
             ].map((s, i) => (
               <div key={i} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "28px 36px", display: "flex", alignItems: "flex-start", gap: 22, boxShadow: T.shadowCard }}>
                 <div style={{ fontSize: 32, width: 48, flexShrink: 0, textAlign: "center", marginTop: 2 }}>{s.icon}</div>
                 <div style={{ flex: 1, textAlign: "left" }}>
                   <p style={{ margin: "0 0 8px", fontSize: 19, fontWeight: 700, color: T.text }}>{s.titulo}</p>
                   <p style={{ margin: 0, fontSize: 15, color: T.textMid, lineHeight: 1.7 }}>{s.texto}</p>
+                  {s.enlaceAviso && (
+                    <p style={{ margin: "10px 0 0", fontSize: 14, color: T.textMid, lineHeight: 1.7 }}>
+                      Para más detalle, consultá el <span style={{ color: T.orange, fontWeight: 700, cursor: "pointer" }} onClick={() => setVista(AVISO_LEGAL_VISTA)}>Aviso Legal y descargo de responsabilidad →</span>
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
@@ -1254,6 +1321,30 @@ export default function App() {
                 <p style={{ margin: 0, fontSize: 15, color: T.textMid }}>¿Tu empresa quiere llegar a desarrolladores del AMBA? <span style={{ color: T.orange, fontWeight: 700, cursor: "pointer" }} onClick={() => setVista("contacto")}>Hablemos →</span></p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* VISTA: AVISO LEGAL — hogar canónico del texto (fuente única:
+          src/lib/avisoLegal.js). Todo enlaza acá; no se duplica. */}
+      {vista === AVISO_LEGAL_VISTA && (
+        <div style={{ flex: 1, width: "100%", padding: "52px 48px", animation: "fadeUp 0.25s ease" }}>
+          <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
+            <p style={{ margin: "0 0 6px", fontSize: 12, color: T.orange, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>Legal</p>
+            <h1 style={{ margin: "0 0 10px", fontSize: 42, fontWeight: 800, color: T.text, letterSpacing: -1, lineHeight: 1.2 }}>{AVISO_LEGAL_TEXTO.titulo}</h1>
+            <p style={{ fontSize: 13, color: T.textLight, marginBottom: 36 }}>
+              Versión {AVISO_LEGAL_VERSION} · Última actualización: {AVISO_LEGAL_FECHA}
+            </p>
+          </div>
+          <div style={{ maxWidth: 760, margin: "0 auto", background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "36px 40px", boxShadow: T.shadowCard }}>
+            <ol style={{ margin: 0, paddingLeft: 24, display: "flex", flexDirection: "column", gap: 18 }}>
+              {AVISO_LEGAL_TEXTO.puntos.map((p, i) => (
+                <li key={i} style={{ fontSize: 15, color: T.textMid, lineHeight: 1.7 }}>
+                  {p.titulo && <strong style={{ color: T.text }}>{p.titulo}: </strong>}
+                  {p.texto}
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       )}
@@ -1387,7 +1478,8 @@ export default function App() {
           <span>© 2025 · Gestión Municipal a la vista</span>
         </div>
         <div style={{ display: "flex", gap: 22 }}>
-          {["Términos", "Privacidad", "Contacto"].map(l => <span key={l} style={{ cursor: "pointer" }}>{l}</span>)}
+          <span style={{ cursor: "pointer" }} onClick={() => setVista(AVISO_LEGAL_VISTA)}>Aviso Legal</span>
+          {["Privacidad", "Contacto"].map(l => <span key={l} style={{ cursor: "pointer" }}>{l}</span>)}
         </div>
       </footer>
     </div>
