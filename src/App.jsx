@@ -910,11 +910,12 @@ export default function App() {
       ::-webkit-scrollbar-thumb{background:${T.borderMid};border-radius:2px}
       .nav-links { display:flex; gap:0; align-items:center; }
       .nav-cta   { display:flex; align-items:center; }
+      .nav-logo-inst { display:flex; align-items:center; }
       .nav-hamburger { display:none; background:none; border:none; font-size:22px; cursor:pointer; color:${T.text}; padding:8px; line-height:1; }
       .ranking-cols { display:flex; gap:24px; align-items:flex-start; }
       .vista-noticias { padding: 52px 48px; }
       @media (max-width:768px) {
-        .nav-links, .nav-cta { display:none !important; }
+        .nav-links, .nav-cta, .nav-logo-inst { display:none !important; }
         .nav-hamburger { display:block !important; }
         .ranking-cols { flex-direction:column; }
         .vista-noticias { padding: 32px 16px; }
@@ -989,6 +990,9 @@ export default function App() {
         </div>
 
         <div style={{ flex: 1 }} />
+
+        {/* Logo institucional CEDU + AEV — decorativo, a la izquierda del CTA, oculto en mobile */}
+        <img className="nav-logo-inst" src="/logo-cedu-aev.png" alt="CEDU + AEV" style={{ height: "34px", width: "auto", objectFit: "contain" }} />
 
         {/* Indicador de sesión — desktop */}
         <div className="nav-cta">
