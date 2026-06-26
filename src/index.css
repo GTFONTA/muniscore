@@ -122,6 +122,10 @@ code {
 @media (max-width: 400px) {
   .metodologia-heading { font-size: 28px !important; }
 }
+/* ── Tarjetas Metodología — apilar en mobile para que el texto use todo el ancho ── */
+@media (max-width: 768px) {
+  .metodologia-card { flex-direction: column !important; gap: 12px !important; }
+}
 
 /* ── I1: Ranking heading — font-size mobile ── */
 @media (max-width: 480px) {
