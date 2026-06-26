@@ -1475,11 +1475,12 @@ export default function App() {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontWeight: 800, fontSize: 15, color: T.text }}>Muni<span style={{ color: T.orange }}>lupa</span></span>
           <span style={{ color: T.borderMid }}>·</span>
-          <span>© 2025 · Gestión Municipal a la vista</span>
+          <span>© 2026 · Gestión Municipal a la vista</span>
         </div>
         <div style={{ display: "flex", gap: 22 }}>
           <span style={{ cursor: "pointer" }} onClick={() => setVista(AVISO_LEGAL_VISTA)}>Aviso Legal</span>
-          {["Privacidad", "Contacto"].map(l => <span key={l} style={{ cursor: "pointer" }}>{l}</span>)}
+          <span style={{ cursor: "pointer" }} onClick={() => setVista("metodologia")}>Metodología</span>
+          <span style={{ cursor: "pointer" }} onClick={() => setVista("contacto")}>Contacto</span>
         </div>
       </footer>
     </div>
