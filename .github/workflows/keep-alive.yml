@@ -1,0 +1,60 @@
+# ============================================================
+#  Keep-alive de Supabase (plan Free) — proyecto "Munilupa-listado"
+#
+#  ¿QUÉ RESUELVE?
+#  Supabase pausa cualquier proyecto Free que no reciba consultas a la
+#  BASE DE DATOS durante 7 días corridos. Las visitas al sitio o al
+#  dashboard NO cuentan: tiene que pegarle a la API REST (PostgREST).
+#  Este workflow hace un SELECT trivial cada 3 días para mantenerlo
+#  despierto.
+#
+#  ALCANCE: solo el proyecto "Munilupa-listado" (identidad/CEDU).
+#  El proyecto "muniscore" NO se pinguea acá: va a plan PRO (no se pausa).
+#
+#  ⚠️ SI ALGO FALLA, el workflow queda en ROJO y GitHub te manda un mail.
+#     Eso es a propósito: un ping silencioso que falla no sirve de nada.
+# ============================================================
+
+name: keep-alive-supabase
+
+on:
+  # ── Frecuencia: cada 3 días (NO cada 7 a propósito) ─────────
+  #  Si una corrida falla, quedan varios días de margen antes de
+  #  que se cumplan los 7 días de inactividad. 7 no dejaría margen.
+  #  Corre a las 06:00 UTC (~03:00 en Argentina).
+  #  👉 Para cambiar la FRECUENCIA, editá esta línea de cron.
+  schedule:
+    - cron: "0 6 */3 * *"
+
+  # ── Disparo manual desde la pestaña "Actions" ───────────────
+  #  Sirve para probar el keep-alive sin esperar al cron.
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping a la base para evitar la pausa
+    runs-on: ubuntu-latest
+    steps:
+      # ── Proyecto "Munilupa-listado" (identidad / CEDU) ───────
+      #  Pega un GET a la tabla `keep_alive` (creada solo para esto:
+      #  ver supabase/migrations/0016_keep_alive.sql). Devuelve a lo
+      #  sumo 1 fila sin datos sensibles; alcanza para generar actividad.
+      #
+      #  --fail            → sale con error si el HTTP es 4xx/5xx (workflow ROJO)
+      #  --silent          → no imprime la barra de progreso
+      #  --show-error      → pero sí muestra el mensaje de error
+      #
+      #  👉 Si algún día cambiás la TABLA del ping, editá "keep_alive"
+      #     en la URL de abajo (y creá esa tabla con policy SELECT a anon).
+      #  👉 Los valores reales (URL y key) viven en Secrets del repo, nunca
+      #     hardcodeados acá: Settings → Secrets and variables → Actions.
+      #     Usar SIEMPRE la anon key, nunca la service_role.
+      - name: Ping Munilupa-listado
+        run: |
+          curl --fail --silent --show-error \
+            "${SUPABASE_URL_LISTADO}/rest/v1/keep_alive?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY_LISTADO}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY_LISTADO}"
+        env:
+          SUPABASE_URL_LISTADO: ${{ secrets.SUPABASE_URL_LISTADO }}
+          SUPABASE_ANON_KEY_LISTADO: ${{ secrets.SUPABASE_ANON_KEY_LISTADO }}
