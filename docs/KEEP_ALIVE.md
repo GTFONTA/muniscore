@@ -1,7 +1,7 @@
 # Keep-alive de Supabase (proyecto Listado)
 
-Mantiene despierto el proyecto Supabase **Munilupa-listado** (plan Free) para que
-no se pause por inactividad.
+Mantiene despiertos los proyectos Supabase **Munilupa-listado** y **muniscore**
+(plan Free) para que no se pausen por inactividad.
 
 ---
 
@@ -20,36 +20,41 @@ El workflow [`.github/workflows/keep-alive.yml`](../.github/workflows/keep-alive
 hace un `SELECT` trivial contra la tabla `keep_alive` **cada 3 días** (no cada 7:
 si una corrida falla, quedan días de margen antes de la pausa).
 
-> **Alcance:** solo el proyecto **Munilupa-listado** (`ltzfauobraykanxisgkx`).
-> El proyecto **muniscore** NO se pinguea: va a plan **PRO**, que no se pausa.
+> **Alcance:** los **dos** proyectos Free, cada uno en su propio step del workflow:
+> **Munilupa-listado** (`ltzfauobraykanxisgkx`, identidad/CEDU) y **muniscore**
+> (`fdvoiaoobjtsvkzpobyq`, votos + lecturas públicas). Si en el futuro pasás muniscore
+> a plan **PRO**, se puede quitar su step (PRO no se pausa).
 
 ---
 
 ## Paso previo (una sola vez): crear la tabla `keep_alive`
 
-Antes de que el workflow funcione, hay que crear la tabla en el proyecto Listado:
+Antes de que el workflow funcione, hay que crear la tabla en **cada** proyecto
+(el mismo SQL sirve para los dos):
 
-1. Abrí **Supabase → proyecto Munilupa-listado → SQL Editor**.
-2. Pegá y corré el contenido de
+1. Abrí **Supabase → proyecto Munilupa-listado → SQL Editor** y corré el contenido de
    [`supabase/migrations/0016_keep_alive.sql`](../supabase/migrations/0016_keep_alive.sql).
-3. Listo: crea la tabla `keep_alive` con una policy de `SELECT` solo para `anon`.
+2. Repetí lo mismo en **Supabase → proyecto muniscore → SQL Editor** con el mismo archivo.
+3. Listo: cada proyecto queda con su tabla `keep_alive` y una policy de `SELECT` solo para `anon`.
 
-Si no corrés esto primero, el workflow va a quedar en **rojo** (la tabla no existe).
+Si no corrés esto primero, el step correspondiente del workflow va a quedar en **rojo**
+(la tabla no existe en ese proyecto).
 
 ---
 
-## Los 4… en realidad 2 secrets a cargar en GitHub
+## Los 4 secrets a cargar en GitHub
 
-> El plan original contemplaba 4 secrets (2 por proyecto). Como muniscore va a PRO,
-> **solo se usan los 2 del proyecto Listado.**
-
-En **GitHub → repo `GTFONTA/muniscore` → Settings → Secrets and variables →
-Actions → New repository secret**, cargá:
+Dos por proyecto. En **GitHub → repo `GTFONTA/muniscore` → Settings → Secrets and
+variables → Actions → New repository secret**, cargá:
 
 | Nombre del secret | Qué valor va | Dónde sacarlo |
 |---|---|---|
 | `SUPABASE_URL_LISTADO` | el **Project URL** del proyecto Listado (`https://<ref>.supabase.co`) | Supabase → proyecto Listado → Settings → API → Project URL |
-| `SUPABASE_ANON_KEY_LISTADO` | la **anon / publishable key** | Supabase → proyecto Listado → Settings → API → Project API keys |
+| `SUPABASE_ANON_KEY_LISTADO` | la **anon / publishable key** de Listado | Supabase → proyecto Listado → Settings → API → Project API keys |
+| `SUPABASE_URL_MUNISCORE` | el **Project URL** del proyecto muniscore | Supabase → proyecto muniscore → Settings → API → Project URL |
+| `SUPABASE_ANON_KEY_MUNISCORE` | la **anon / publishable key** de muniscore | Supabase → proyecto muniscore → Settings → API → Project API keys |
+
+> Si ya cargaste los 2 de Listado antes, solo te faltan los 2 de muniscore.
 
 ⚠️ **Usá SIEMPRE la `anon` (publishable) key. NUNCA la `service_role`.** La
 service_role saltea RLS y es una llave maestra; no tiene por qué estar en un
@@ -70,10 +75,12 @@ No hace falta esperar 3 días al cron:
 3. Botón **`Run workflow`** (arriba a la derecha) → **`Run workflow`**.
 4. Esperá unos segundos y refrescá. Aparece una corrida nueva.
    - ✅ **Verde** = el ping funcionó, el proyecto está despierto.
-   - ❌ **Rojo** = algo falló. Clickeá la corrida → el step **`Ping Munilupa-listado`**
-     para ver el error de `curl`. Causas típicas: no corriste la migración 0016,
-     un secret está mal cargado, o el proyecto ya estaba pausado (despausalo una vez
-     a mano y el keep-alive lo mantiene).
+   - ❌ **Rojo** = algo falló. Clickeá la corrida → el step que falló
+     (**`Ping Munilupa-listado`** o **`Ping muniscore`**) para ver el error de `curl`.
+     Como son dos steps independientes, el nombre te dice cuál de los dos proyectos falló.
+     Causas típicas: no corriste la migración 0016 en ese proyecto, un secret está mal
+     cargado, o el proyecto ya estaba pausado (despausalo una vez a mano y el keep-alive
+     lo mantiene).
 
 Además, como el `curl` usa `--fail`, cualquier corrida programada que falle deja el
 workflow en rojo y **GitHub te manda un mail** — así te enterás sin tener que mirar.

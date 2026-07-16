@@ -8,8 +8,11 @@
 #  Este workflow hace un SELECT trivial cada 3 días para mantenerlo
 #  despierto.
 #
-#  ALCANCE: solo el proyecto "Munilupa-listado" (identidad/CEDU).
-#  El proyecto "muniscore" NO se pinguea acá: va a plan PRO (no se pausa).
+#  ALCANCE: los dos proyectos Free, cada uno en su propio step:
+#    - "Munilupa-listado" (identidad/CEDU)
+#    - "muniscore"        (votos + lecturas públicas)
+#  Ambos pinguean una tabla `keep_alive` dedicada (ver la migración
+#  supabase/migrations/0016_keep_alive.sql, que hay que correr en LOS DOS).
 #
 #  ⚠️ SI ALGO FALLA, el workflow queda en ROJO y GitHub te manda un mail.
 #     Eso es a propósito: un ping silencioso que falla no sirve de nada.
@@ -58,3 +61,20 @@ jobs:
         env:
           SUPABASE_URL_LISTADO: ${{ secrets.SUPABASE_URL_LISTADO }}
           SUPABASE_ANON_KEY_LISTADO: ${{ secrets.SUPABASE_ANON_KEY_LISTADO }}
+
+      # ── Proyecto "muniscore" (votos + lecturas públicas) ─────
+      #  Mismo esquema que el step de arriba: GET a la tabla `keep_alive`
+      #  (creada por la misma migración 0016, corrida también en muniscore).
+      #  Es un step INDEPENDIENTE: si uno de los dos pings falla, el workflow
+      #  igual queda en ROJO y te enterás por mail.
+      #
+      #  👉 Usa sus propios secrets (_MUNISCORE). Anon key, nunca service_role.
+      - name: Ping muniscore
+        run: |
+          curl --fail --silent --show-error \
+            "${SUPABASE_URL_MUNISCORE}/rest/v1/keep_alive?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY_MUNISCORE}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY_MUNISCORE}"
+        env:
+          SUPABASE_URL_MUNISCORE: ${{ secrets.SUPABASE_URL_MUNISCORE }}
+          SUPABASE_ANON_KEY_MUNISCORE: ${{ secrets.SUPABASE_ANON_KEY_MUNISCORE }}
