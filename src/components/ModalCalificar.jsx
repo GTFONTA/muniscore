@@ -36,7 +36,7 @@ export default function ModalCalificar({ alCerrar, alConfirmarMunicipio }) {
     if (error === 'no_autorizado') {
       setMensaje('Este correo no está habilitado para votar. Si tu empresa quiere participar, contactanos.');
     } else if (error) {
-      setMensaje('❌ Error al enviar el email. Revisá que sea válido e intentá de nuevo.');
+      setMensaje('❌ No pudimos enviar el email por un problema técnico. Probá de nuevo en unos minutos y, si sigue fallando, contactanos.');
     } else {
       setPaso('esperando');
     }

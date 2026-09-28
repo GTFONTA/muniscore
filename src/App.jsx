@@ -417,7 +417,7 @@ const ModalEncuesta = ({ mun, usuario, onClose, onVotado }) => {
     const { error } = await loginConEmail(email);
     setCargando(false);
     if (error === "no_autorizado") { setError("Este correo no está habilitado para votar. Si tu empresa quiere participar, contactanos."); return; }
-    if (error) { setError("No pudimos enviar el email. Verificá que sea válido."); return; }
+    if (error) { setError("No pudimos enviar el email por un problema técnico. Probá de nuevo en unos minutos y, si sigue fallando, contactanos."); return; }
     setLinkEnviado(true);
   };
 
